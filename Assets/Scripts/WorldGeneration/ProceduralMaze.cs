@@ -15,13 +15,20 @@ public class ProceduralMaze : MonoBehaviour
     [SerializeField] private GameObject enemySpawnPointPrefab;
     [SerializeField] private GameObject playerSpawnPointPrefab;
     [SerializeField] private GameObject exitPointPrefab;
+    [SerializeField] private GameObject patrolNodePrefab;
     
     [Header("Spawn Points")]
     [SerializeField] private int numberOfSpawnPoints = 4;
     [SerializeField] private float minDistanceFromEnemies = 20f; // Minimum distance from enemy spawn points
+    
+    [Header("Patrol Nodes")]
+    [SerializeField] private int patrolNodesPerEnemy = 5;
+    [SerializeField] private float minNodeSpacing = 15f; // Minimum distance between patrol nodes
+    
     private List<GameObject> enemySpawnPoints = new List<GameObject>();
     private GameObject playerSpawnPoint;
     private GameObject exitPoint;
+    private List<GameObject> patrolNodes = new List<GameObject>();
     private Vector2Int playerStartCell;
     private Vector2Int exitCell;
     
@@ -36,6 +43,7 @@ public class ProceduralMaze : MonoBehaviour
         FindConnectedPositions();
         CreatePlayerSpawnPoint();
         CreateExitPoint();
+        CreatePatrolNodes();
         CreateEnemySpawnPoints();
     }
     
@@ -481,5 +489,54 @@ public class ProceduralMaze : MonoBehaviour
     public GameObject GetExitPoint()
     {
         return exitPoint;
+    }
+    
+    void CreatePatrolNodes()
+    {
+        if (patrolNodePrefab == null)
+        {
+            Debug.LogError("Patrol Node Prefab is not assigned!");
+            return;
+        }
+        
+        if (connectedPositions.Count == 0)
+        {
+            Debug.LogError("No connected positions found! Cannot create patrol nodes.");
+            return;
+        }
+        
+        // Calculate total nodes needed
+        int totalNodes = numberOfSpawnPoints * patrolNodesPerEnemy;
+        List<Vector3> availablePositions = new List<Vector3>(connectedPositions);
+        
+        // Remove positions too close to player and exit
+        availablePositions.RemoveAll(pos => 
+            Vector3.Distance(pos, playerSpawnPoint.transform.position) < minNodeSpacing ||
+            Vector3.Distance(pos, exitPoint.transform.position) < minNodeSpacing
+        );
+        
+        for (int i = 0; i < totalNodes && availablePositions.Count > 0; i++)
+        {
+            int randomIndex = Random.Range(0, availablePositions.Count);
+            Vector3 nodePosition = availablePositions[randomIndex];
+            
+            // Raise patrol nodes above the ground so NavMesh agents can reach them
+            nodePosition.y += 1f;
+            
+            GameObject patrolNode = Instantiate(patrolNodePrefab, nodePosition, Quaternion.identity, transform);
+            patrolNode.name = $"PatrolNode_{i}";
+            patrolNodes.Add(patrolNode);
+            
+            // Remove this position and nearby positions to maintain spacing
+            availablePositions.RemoveAll(pos => Vector3.Distance(pos, nodePosition) < minNodeSpacing);
+        }
+        
+        Debug.Log($"Created {patrolNodes.Count} patrol nodes");
+    }
+    
+    // Public method to get all patrol nodes
+    public List<GameObject> GetPatrolNodes()
+    {
+        return patrolNodes;
     }
 }
