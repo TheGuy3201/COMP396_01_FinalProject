@@ -44,3 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 579249b58c33fd2418e9e4c5f1f799aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 1295199820057841057, guid: 5623033e8471d8b42895caacb05ebbc2,
+    type: 3}
+  mazeGenerator: {fileID: 0}
