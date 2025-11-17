@@ -47,3 +47,14 @@ MonoBehaviour:
   enemyPrefab: {fileID: 1295199820057841057, guid: 5623033e8471d8b42895caacb05ebbc2,
     type: 3}
   mazeGenerator: {fileID: 0}
+  enemySprites:
+  - {fileID: 21300000, guid: 664711136f9dff24c8ea56ccd6ef7a68, type: 3}
+  - {fileID: 21300000, guid: 592dc89196389f04a850ab8763d847f3, type: 3}
+  - {fileID: 21300000, guid: 03e09ded6ec932e48991e8ecf75f26ad, type: 3}
+  - {fileID: 21300000, guid: 01bbf414ce1b3e5419907201a9689647, type: 3}
+  - {fileID: 21300000, guid: da89347d89c20de42a8910903fb4fa65, type: 3}
+  - {fileID: 21300000, guid: eede6452b0cafee4c8e2819c378a076d, type: 3}
+  - {fileID: 21300000, guid: 9221fdf7803f6694ab1f6f3ffe95df9d, type: 3}
+  - {fileID: 21300000, guid: 30b6a7a25d4913f44b5c7c3e20b75bcc, type: 3}
+  - {fileID: 21300000, guid: c4f69356a53003844b11b7a83fddf9b8, type: 3}
+  - {fileID: 21300000, guid: 839e19bf22f0266499dda624499ba564, type: 3}
