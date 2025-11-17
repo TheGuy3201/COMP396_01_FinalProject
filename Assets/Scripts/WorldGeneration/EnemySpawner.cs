@@ -7,6 +7,7 @@ public class EnemySpawner : MonoBehaviour
     [Header("Enemy Settings")]
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private ProceduralMaze mazeGenerator;
+    [SerializeField] private Sprite[] enemySprites;
     
     private List<GameObject> spawnedEnemies = new List<GameObject>();
     
@@ -62,6 +63,7 @@ public class EnemySpawner : MonoBehaviour
                 
                 GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
                 enemy.name = $"Enemy_{spawnedEnemies.Count}";
+                enemy.GetComponentInChildren<SpriteRenderer>().sprite = enemySprites[Random.Range(0, enemySprites.Length)];
                 
                 // Ensure the enemy has the EnemyAI component
                 EnemyAI enemyAI = enemy.GetComponent<EnemyAI>();
