@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1489778014380582283}
   - component: {fileID: 3015596073610368386}
   - component: {fileID: 2579441004728893730}
+  - component: {fileID: 8527316379631405818}
   m_Layer: 0
   m_Name: ExitPoint
   m_TagString: Untagged
@@ -94,7 +95,7 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -107,3 +108,16 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8527316379631405818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8840558840021933071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9292721304736ab4fb55906eb6928c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextLevelName: 

@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ProceduralMaze : MonoBehaviour
 {
@@ -28,6 +30,7 @@ public class ProceduralMaze : MonoBehaviour
     private List<GameObject> enemySpawnPoints = new List<GameObject>();
     private GameObject playerSpawnPoint;
     private GameObject exitPoint;
+    private string localNextLevelName;
     private List<GameObject> patrolNodes = new List<GameObject>();
     private Vector2Int playerStartCell;
     private Vector2Int exitCell;
@@ -45,8 +48,21 @@ public class ProceduralMaze : MonoBehaviour
         CreateExitPoint();
         CreatePatrolNodes();
         CreateEnemySpawnPoints();
+        //localNextLevelName = setNextLevelName();
     }
     
+    private string setNextLevelName()
+    {
+        if(SceneManager.GetActiveScene().name == "Level (1)")
+            return "Level (2)";
+        else if(SceneManager.GetActiveScene().name == "Level (2)")
+            return "Level (3)";
+        else if(SceneManager.GetActiveScene().name == "Level (3)")
+            return "GameOver";
+        else
+        return "";
+    }
+
     void GenerateMazeWithGuaranteedPath()
     {
         // Initialize the maze grid
@@ -64,12 +80,12 @@ public class ProceduralMaze : MonoBehaviour
         }
         
         // Choose player start position (bottom-left area)
-        playerStartCell = new Vector2Int(Random.Range(0, mazeWidth / 4), Random.Range(0, mazeHeight / 4));
+        playerStartCell = new Vector2Int(UnityEngine.Random.Range(0, mazeWidth / 4), UnityEngine.Random.Range(0, mazeHeight / 4));
         
         // Choose exit position (top-right area, far from player)
         exitCell = new Vector2Int(
-            Random.Range(mazeWidth * 3 / 4, mazeWidth),
-            Random.Range(mazeHeight * 3 / 4, mazeHeight)
+            UnityEngine.Random.Range(mazeWidth * 3 / 4, mazeWidth),
+            UnityEngine.Random.Range(mazeHeight * 3 / 4, mazeHeight)
         );
         
         Debug.Log($"Player start cell: {playerStartCell}, Exit cell: {exitCell}");
@@ -130,7 +146,7 @@ public class ProceduralMaze : MonoBehaviour
             int yDiff = exitCell.y - current.y;
             
             // Randomly choose to move horizontally or vertically (with bias towards exit)
-            bool moveHorizontal = Random.value < 0.5f;
+            bool moveHorizontal = UnityEngine.Random.value < 0.5f;
             
             if (xDiff != 0 && (moveHorizontal || yDiff == 0))
             {
@@ -175,7 +191,7 @@ public class ProceduralMaze : MonoBehaviour
         {
             for (int y = 1; y < maze.GetLength(1) - 1; y += 2)
             {
-                if (maze[x, y] == 1 && Random.value < extraPathChance)
+                if (maze[x, y] == 1 && UnityEngine.Random.value < extraPathChance)
                 {
                     maze[x, y] = 0;
                     pathsAdded++;
@@ -187,7 +203,7 @@ public class ProceduralMaze : MonoBehaviour
         {
             for (int y = 2; y < maze.GetLength(1) - 2; y += 2)
             {
-                if (maze[x, y] == 1 && Random.value < extraPathChance)
+                if (maze[x, y] == 1 && UnityEngine.Random.value < extraPathChance)
                 {
                     maze[x, y] = 0;
                     pathsAdded++;
@@ -247,7 +263,7 @@ public class ProceduralMaze : MonoBehaviour
     {
         for (int i = array.Length - 1; i > 0; i--)
         {
-            int randomIndex = Random.Range(0, i + 1);
+            int randomIndex = UnityEngine.Random.Range(0, i + 1);
             Vector2Int temp = array[i];
             array[i] = array[randomIndex];
             array[randomIndex] = temp;
@@ -424,7 +440,7 @@ public class ProceduralMaze : MonoBehaviour
         
         for (int i = 0; i < spawnPointsToCreate; i++)
         {
-            int randomIndex = Random.Range(0, availablePositions.Count);
+            int randomIndex = UnityEngine.Random.Range(0, availablePositions.Count);
             Vector3 spawnPosition = availablePositions[randomIndex];
             
             GameObject spawnPoint = Instantiate(enemySpawnPointPrefab, spawnPosition, Quaternion.identity, transform);
@@ -468,6 +484,7 @@ public class ProceduralMaze : MonoBehaviour
         Vector3 exitPosition = new Vector3(exitCell.x * 2 + 1, 0, exitCell.y * 2 + 1) * cellSize;
         
         exitPoint = Instantiate(exitPointPrefab, exitPosition, Quaternion.identity, transform);
+        exitPoint.GetComponent<ExitPoint>().nextLevelName = setNextLevelName();
         exitPoint.name = "ExitPoint";
         
         Debug.Log($"Created exit point at {exitPosition}");
@@ -517,7 +534,7 @@ public class ProceduralMaze : MonoBehaviour
         
         for (int i = 0; i < totalNodes && availablePositions.Count > 0; i++)
         {
-            int randomIndex = Random.Range(0, availablePositions.Count);
+            int randomIndex = UnityEngine.Random.Range(0, availablePositions.Count);
             Vector3 nodePosition = availablePositions[randomIndex];
             
             // Raise patrol nodes above the ground so NavMesh agents can reach them
