@@ -14,6 +14,9 @@ public class TitleScreen : MonoBehaviour
     // Called when Start button is pressed
     public void StartGame()
     {
+        // show and unlock the cursor using Unity's API
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
         SceneManager.LoadScene(gameplayScene);
     }
 
