@@ -3,6 +3,7 @@ using UnityEngine;
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
+    [SerializeField] private UnityEngine.UI.Slider hlthSlider;
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth;
     
@@ -15,7 +16,7 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth -= damage;
         Debug.Log($"Player took {damage} damage. Current health: {currentHealth}/{maxHealth}");
-        
+        hlthSlider.value = currentHealth;
         if (currentHealth <= 0)
         {
             Die();
@@ -25,6 +26,7 @@ public class PlayerHealth : MonoBehaviour
     public void Heal(int amount)
     {
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        hlthSlider.value = currentHealth;
         Debug.Log($"Player healed {amount}. Current health: {currentHealth}/{maxHealth}");
     }
     

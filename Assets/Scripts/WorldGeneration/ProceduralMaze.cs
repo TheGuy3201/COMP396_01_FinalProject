@@ -18,6 +18,16 @@ public class ProceduralMaze : MonoBehaviour
     [SerializeField] private GameObject playerSpawnPointPrefab;
     [SerializeField] private GameObject exitPointPrefab;
     [SerializeField] private GameObject patrolNodePrefab;
+    [SerializeField] private GameObject healthPackPrefab;
+    [SerializeField] private GameObject speedBoostPrefab;
+    [SerializeField] private GameObject superBoostPrefab;
+    [SerializeField] private GameObject coinPrefab;
+    
+    [Header("Powerup Spawn Settings")]
+    [SerializeField] private int healthPackCount = 3;
+    [SerializeField] private int speedBoostCount = 2;
+    [SerializeField] private int superBoostCount = 1;
+    [SerializeField] private int coinCount = 10;
     
     [Header("Spawn Points")]
     [SerializeField] private int numberOfSpawnPoints = 4;
@@ -48,6 +58,7 @@ public class ProceduralMaze : MonoBehaviour
         CreateExitPoint();
         CreatePatrolNodes();
         CreateEnemySpawnPoints();
+        SpawnPowerups();
         //localNextLevelName = setNextLevelName();
     }
     
@@ -555,5 +566,63 @@ public class ProceduralMaze : MonoBehaviour
     public List<GameObject> GetPatrolNodes()
     {
         return patrolNodes;
+    }
+
+    void SpawnPowerups()
+    {
+        if (healthPackPrefab == null && speedBoostPrefab == null && 
+            superBoostPrefab == null && coinPrefab == null)
+        {
+            Debug.LogWarning("No powerup prefabs assigned! Skipping powerup spawning.");
+            return;
+        }
+
+        if (connectedPositions.Count == 0)
+        {
+            Debug.LogError("No connected positions found! Cannot spawn powerups.");
+            return;
+        }
+
+        // Create a list of available positions (excluding player and exit spawn points)
+        List<Vector3> availablePositions = new List<Vector3>(connectedPositions);
+        availablePositions.RemoveAll(pos => 
+            Vector3.Distance(pos, playerSpawnPoint.transform.position) < 5f ||
+            Vector3.Distance(pos, exitPoint.transform.position) < 5f
+        );
+
+        // Spawn health packs
+        SpawnPowerupType(healthPackPrefab, healthPackCount, availablePositions, "HealthPack");
+
+        // Spawn speed boosts
+        SpawnPowerupType(speedBoostPrefab, speedBoostCount, availablePositions, "SpeedBoost");
+
+        // Spawn super boosts
+        SpawnPowerupType(superBoostPrefab, superBoostCount, availablePositions, "SuperBoost");
+
+        // Spawn coins
+        SpawnPowerupType(coinPrefab, coinCount, availablePositions, "Coin");
+
+        Debug.Log($"Spawned powerups: {healthPackCount} Health, {speedBoostCount} Speed, {superBoostCount} Super, {coinCount} Coins");
+    }
+
+    void SpawnPowerupType(GameObject prefab, int count, List<Vector3> availablePositions, string powerupName)
+    {
+        if (prefab == null || availablePositions.Count == 0)
+            return;
+
+        for (int i = 0; i < count && availablePositions.Count > 0; i++)
+        {
+            int randomIndex = UnityEngine.Random.Range(0, availablePositions.Count);
+            Vector3 spawnPosition = availablePositions[randomIndex];
+
+            // Slightly raise the powerup above the ground
+            spawnPosition.y += 0.5f;
+
+            GameObject powerup = Instantiate(prefab, spawnPosition, Quaternion.identity, transform);
+            powerup.name = $"{powerupName}_{i}";
+
+            // Remove this position so we don't spawn multiple powerups at the same location
+            availablePositions.RemoveAt(randomIndex);
+        }
     }
 }
