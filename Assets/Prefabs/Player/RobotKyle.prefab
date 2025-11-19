@@ -1227,11 +1227,6 @@ GameObject:
   - component: {fileID: 4990764682642888921}
   - component: {fileID: 5086242376466292938}
   - component: {fileID: 2383631508651570851}
-<<<<<<< Updated upstream
-=======
-  - component: {fileID: 8155010236031223774}
-  - component: {fileID: -1372677231105697696}
->>>>>>> Stashed changes
   m_Layer: 8
   m_Name: RobotKyle
   m_TagString: Player
@@ -1482,50 +1477,6 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
-<<<<<<< Updated upstream
-=======
---- !u!54 &8155010236031223774
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3862277631971027947}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
---- !u!114 &-1372677231105697696
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3862277631971027947}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd512b58bd2eb3d478ae34f90e1b7fb3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 50
->>>>>>> Stashed changes
 --- !u!1 &4072265639379859564
 GameObject:
   m_ObjectHideFlags: 0
