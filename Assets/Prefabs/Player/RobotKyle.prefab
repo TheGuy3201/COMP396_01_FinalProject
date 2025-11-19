@@ -1228,6 +1228,7 @@ GameObject:
   - component: {fileID: 5086242376466292938}
   - component: {fileID: 2383631508651570851}
   - component: {fileID: 8155010236031223774}
+  - component: {fileID: -1372677231105697696}
   m_Layer: 8
   m_Name: RobotKyle
   m_TagString: Player
@@ -1508,6 +1509,20 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-1372677231105697696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862277631971027947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd512b58bd2eb3d478ae34f90e1b7fb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 50
 --- !u!1 &4072265639379859564
 GameObject:
   m_ObjectHideFlags: 0
