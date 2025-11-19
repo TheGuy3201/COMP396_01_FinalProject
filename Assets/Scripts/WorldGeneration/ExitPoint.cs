@@ -10,10 +10,10 @@ public class ExitPoint : MonoBehaviour
     public string nextLevelName;
 
     // Called for non-trigger physics collisions (requires Rigidbody on either object)
-    public void OnCollisionEnter(Collision collision)
+    public void OnTriggerEnter(Collider other)
     {
-        Debug.Log("ExitPoint: OnCollisionEnter with " + collision.gameObject.name);
-        if (collision.gameObject.CompareTag("Player"))
+        Debug.Log("ExitPoint: OnTriggerEnter with " + other.gameObject.name);
+        if (other.gameObject.CompareTag("Player"))
         {
             Debug.Log("Player reached exit point (collision). Loading next level: " + nextLevelName);
             //AudioManager.Play("Teleport");

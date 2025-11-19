@@ -1408,7 +1408,8 @@ MonoBehaviour:
     type: 3}
   speedBoostPrefab: {fileID: 7370043300670028658, guid: 19b7e95a091652640b4df605bec6a161,
     type: 3}
-  superBoostPrefab: {fileID: 0}
+  superBoostPrefab: {fileID: 5225455176718880169, guid: 59fd80584945fc7448940995b97dab30,
+    type: 3}
   coinPrefab: {fileID: 0}
   healthPackCount: 6
   speedBoostCount: 6
