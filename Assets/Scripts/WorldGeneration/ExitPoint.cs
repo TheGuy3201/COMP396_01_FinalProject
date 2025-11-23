@@ -9,8 +9,8 @@ public class ExitPoint : MonoBehaviour
     [Tooltip("Name of the scene to load when the player reaches this exit point.")]
     public string nextLevelName;
 
-    // Called for non-trigger physics collisions (requires Rigidbody on either object)
-    public void OnTriggerEnter(Collider other)
+    // Called for non-trigger physics collisions
+    public void OnTriggerEnter(Collider other) // Detect collision with player to load next level
     {
         Debug.Log("ExitPoint: OnTriggerEnter with " + other.gameObject.name);
         if (other.gameObject.CompareTag("Player"))

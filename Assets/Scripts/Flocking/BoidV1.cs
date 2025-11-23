@@ -18,17 +18,17 @@ public class BoidV1 : MonoBehaviour
     public float followVelocity = 4.0f;
     public float followRadius = 40.0f;
     [Header("Movement Variables")]
-    private Transform origin;
-    private Vector3 velocity;
-    private Vector3 normalizedVelocity;
-    private Vector3 randomPush;
-    private Vector3 originPush;
-    private Transform[] objects;
-    private BoidV1[] otherBoids;
-    private Transform transformComponent;
-    private float randomFreqInterval;
+    private Transform origin; // Reference to the origin or parent transform
+    private Vector3 velocity; // Current velocity of the boid
+    private Vector3 normalizedVelocity; // Normalized velocity of the boid
+    private Vector3 randomPush; // Random force applied to the boid
+    private Vector3 originPush; // Force pushing the boid towards the origin
+    private Transform[] objects; // References to other boid transforms in the flock
+    private BoidV1[] otherBoids; // References to other boids in the flock
+    private Transform transformComponent; // Reference to this boid's transform
+    private float randomFreqInterval; // Interval for random force updates
 
-    IEnumerator UpdateRandom()
+    IEnumerator UpdateRandom() // Coroutine to update random push at intervals (apply some fluctuation to flock)
     {
         while (true)
         {
@@ -73,7 +73,6 @@ public class BoidV1 : MonoBehaviour
         StartCoroutine(UpdateRandom());
     }
 
-    // Update is called once per frame
     void Update()
     {
         //Internal variables
