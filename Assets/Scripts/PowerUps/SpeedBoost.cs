@@ -16,7 +16,7 @@ public class SpeedBoost : MonoBehaviour
         StartCoroutine(SpeedyINIT(0.8f));
     }
 
-    public void OnTriggerEnter(Collider other)
+    public void OnTriggerEnter(Collider other) // Detect collision with player to apply speed boost
     {
         Debug.Log("SpeedBoost: OnTriggerEnter with " + other.gameObject.name);
         if (other.gameObject.CompareTag("Player"))
@@ -30,7 +30,7 @@ public class SpeedBoost : MonoBehaviour
         }
     }
 
-    IEnumerator ResetSpeedAfterDelay(float delay)
+    IEnumerator ResetSpeedAfterDelay(float delay) // Reset player speed after boost duration
     {
         yield return new WaitForSeconds(delay);
         if (playerCC != null)
@@ -42,7 +42,7 @@ public class SpeedBoost : MonoBehaviour
         }
     }
 
-    IEnumerator SpeedyINIT(float delay)
+    IEnumerator SpeedyINIT(float delay) // Wait for player to spawn then get reference
     {
         yield return new WaitForSeconds(delay);
         playerGO = GameObject.FindWithTag("Player");

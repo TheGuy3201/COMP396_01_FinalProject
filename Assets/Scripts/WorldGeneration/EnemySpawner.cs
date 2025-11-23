@@ -11,21 +11,21 @@ public class EnemySpawner : MonoBehaviour
     
     private List<GameObject> spawnedEnemies = new List<GameObject>();
     
-    void Start()
+    void Start() // Initialize and start spawning enemies after maze generation
     {
         mazeGenerator = FindAnyObjectByType<ProceduralMaze>();
         StartCoroutine(SpawnEnemiesAfterMaze());
     }
     
-    IEnumerator SpawnEnemiesAfterMaze()
+    IEnumerator SpawnEnemiesAfterMaze() // Coroutine to spawn enemies after maze generation
     {
         // Wait one frame to ensure the maze has been generated
         yield return new WaitForEndOfFrame();
         
-        SpawnEnemies();
+        SpawnEnemies(); // Call the method to spawn enemies
     }
     
-    void SpawnEnemies()
+    void SpawnEnemies() // Spawn enemies at designated spawn points in the maze
     {
         if (enemyPrefab == null)
         {

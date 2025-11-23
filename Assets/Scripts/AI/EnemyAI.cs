@@ -7,21 +7,20 @@ using UnityEngine.AI;
 public class EnemyAI : MonoBehaviour
 {
     [Header("Detection Settings")]
-    [SerializeField] private float detectionRange = 15f;
-    [SerializeField] private float attackRange = 2f;
-    [SerializeField] private LayerMask detectionLayers;
-    
+    [SerializeField] private float detectionRange = 15f; // Range within which the enemy can detect the player
+    [SerializeField] private float attackRange = 4f; // Range within which the enemy can attack the player
+
     [Header("Patrol Settings")]
-    [SerializeField] private float patrolWaitTime = 2f;
-    [SerializeField] private float patrolSpeed = 3.5f;
+    [SerializeField] private float patrolWaitTime = 2f; // Time to wait at each patrol node
+    [SerializeField] private float patrolSpeed = 3.5f; // Speed while patrolling
     
     [Header("Chase Settings")]
-    [SerializeField] private float chaseSpeed = 6f;
+    [SerializeField] private float chaseSpeed = 6f; // Speed while chasing the player
     [SerializeField] private float losePlayerTime = 3f; // Time before returning to patrol after losing sight
     
     [Header("Attack Settings")]
-    [SerializeField] private float attackCooldown = 1.5f;
-    [SerializeField] private int attackDamage = 10;
+    [SerializeField] private float attackCooldown = 1.5f; // Time between attacks
+    [SerializeField] private int attackDamage = 10; // Damage dealt per attack
     
     private NavMeshAgent agent;
     private Transform player;
@@ -30,18 +29,18 @@ public class EnemyAI : MonoBehaviour
     private float lastAttackTime;
     private float lostPlayerTimer;
     
-    private enum AIState
+    private enum AIState // FSM state of the AI
     {
         Patrolling,
         Chasing,
         Attacking
     }
     
-    private AIState currentState = AIState.Patrolling;
+    private AIState currentState = AIState.Patrolling; // Initial state of the AI
     
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
+        agent = GetComponent<NavMeshAgent>(); 
         
         // Find player by tag
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -54,11 +53,11 @@ public class EnemyAI : MonoBehaviour
             Debug.LogWarning("No GameObject with 'Player' tag found!");
         }
         
-        // Get patrol nodes from the maze generator
+        // Get patrol nodes from the maze generator script
         ProceduralMaze maze = FindObjectOfType<ProceduralMaze>();
         if (maze != null)
         {
-            patrolNodes = maze.GetPatrolNodes();
+            patrolNodes = maze.GetPatrolNodes(); //Calls a method to get all patrol Nodes
             if (patrolNodes.Count > 0)
             {
                 // Start patrolling to nearest node
@@ -67,15 +66,17 @@ public class EnemyAI : MonoBehaviour
             }
         }
         
-        agent.speed = patrolSpeed;
+        agent.speed = patrolSpeed; //Changes speed to patrol speed (much faster!)
     }
     
     void Update()
     {
+        // Check if player reference is properly assigned
         if (player == null) return;
         
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position); // Calculate distance to player
         
+        // State machine logic in a switch statement
         switch (currentState)
         {
             case AIState.Patrolling:
@@ -103,6 +104,7 @@ public class EnemyAI : MonoBehaviour
                 }
                 else
                 {
+                    // Reset lost player timer if player is visible
                     lostPlayerTimer = 0f;
                     agent.SetDestination(player.position);
                 }
@@ -140,23 +142,23 @@ public class EnemyAI : MonoBehaviour
         }
     }
     
-    bool CanSeePlayer()
+    bool CanSeePlayer() // Simple line-of-sight check
     {
-        if (player == null) return false;
+        if (player == null) return false; //Again, check if player reference is valid
         
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
         float distance = Vector3.Distance(transform.position, player.position);
         
-        // Raycast to check for obstacles
+        // Raycast to check for obstacles or if the player is visible
         if (Physics.Raycast(transform.position + Vector3.up, directionToPlayer, out RaycastHit hit, distance))
         {
-            return hit.transform.CompareTag("Player");
+            return hit.transform.CompareTag("Player"); // Returns true if the raycast hits the player
         }
         
-        return false;
+        return false; // Default to false if nothing is hit
     }
     
-    void EnterPatrolState()
+    void EnterPatrolState() // Switch to patrol state
     {
         currentState = AIState.Patrolling;
         agent.speed = patrolSpeed;
@@ -165,12 +167,13 @@ public class EnemyAI : MonoBehaviour
         
         if (patrolNodes.Count > 0)
         {
+            //Stops previous state coroutine and starts patrolling state coroutine
             StopAllCoroutines();
             StartCoroutine(PatrolRoutine());
         }
     }
     
-    void EnterChaseState()
+    void EnterChaseState() // Switch to chase state
     {
         currentState = AIState.Chasing;
         agent.speed = chaseSpeed;
@@ -179,13 +182,13 @@ public class EnemyAI : MonoBehaviour
         StopAllCoroutines();
     }
     
-    void EnterAttackState()
+    void EnterAttackState() // Switch to attack state
     {
         currentState = AIState.Attacking;
         agent.isStopped = true;
     }
     
-    void Attack()
+    void Attack() // Actual attack logic
     {
         Debug.Log($"{gameObject.name} attacks player for {attackDamage} damage!");
         
@@ -200,7 +203,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
     
-    IEnumerator PatrolRoutine()
+    IEnumerator PatrolRoutine() // Coroutine for patrolling behavior
     {
         while (currentState == AIState.Patrolling && patrolNodes.Count > 0)
         {
@@ -208,9 +211,10 @@ public class EnemyAI : MonoBehaviour
             GameObject targetNode = patrolNodes[currentPatrolIndex];
             if (targetNode != null)
             {
+                // Move towards the patrol node
                 agent.SetDestination(targetNode.transform.position);
                 
-                // Wait until we reach the node
+                // Wait until it reaches the node
                 while (Vector3.Distance(transform.position, targetNode.transform.position) > agent.stoppingDistance + 0.5f)
                 {
                     if (currentState != AIState.Patrolling) yield break;
@@ -230,9 +234,9 @@ public class EnemyAI : MonoBehaviour
         }
     }
     
-    void FindNearestPatrolNode()
+    void FindNearestPatrolNode() // Finds the nearest patrol node to start patrolling from
     {
-        if (patrolNodes.Count == 0) return;
+        if (patrolNodes.Count == 0) return; //Another safety check
         
         float minDistance = float.MaxValue;
         int nearestIndex = 0;
@@ -241,7 +245,7 @@ public class EnemyAI : MonoBehaviour
         {
             if (patrolNodes[i] != null)
             {
-                float distance = Vector3.Distance(transform.position, patrolNodes[i].transform.position);
+                float distance = Vector3.Distance(transform.position, patrolNodes[i].transform.position); // Calculate distance to patrol node
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -250,10 +254,10 @@ public class EnemyAI : MonoBehaviour
             }
         }
         
-        currentPatrolIndex = nearestIndex;
+        currentPatrolIndex = nearestIndex; // Set the current patrol index to the nearest node
     }
     
-    private void OnDrawGizmosSelected()
+    private void OnDrawGizmosSelected() // Visualize detection and attack ranges in the editor
     {
         // Draw detection range
         Gizmos.color = Color.yellow;
