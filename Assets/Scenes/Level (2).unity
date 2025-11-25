@@ -1077,7 +1077,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 15, y: 1, z: 15}
+  m_LocalScale: {x: 60, y: 1, z: 60}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1111,7 +1111,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 761d108bda06776439f0bc810958c484, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: d63408ec60ef0bb4297ba4aed7b7c5c9, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &1440644199
 GameObject:
@@ -1467,9 +1467,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f50e2339cb355b74ca1d9cd7787db682, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mazeWidth: 10
-  mazeHeight: 10
-  cellSize: 2.5
+  mazeWidth: 15
+  mazeHeight: 15
+  cellSize: 2.4
   extraPathChance: 0.3
   wallPrefab: {fileID: 8681240615635381520, guid: 4c2984d9f7babfa45bc77ce58b9e5956,
     type: 3}
@@ -1489,12 +1489,12 @@ MonoBehaviour:
     type: 3}
   coinPrefab: {fileID: 6954758372675618198, guid: 6a301d09debaf1e4a8d3e2657cc44a96,
     type: 3}
-  healthPackCount: 6
-  speedBoostCount: 6
-  superBoostCount: 2
-  coinCount: 10
-  numberOfSpawnPoints: 4
-  minDistanceFromEnemies: 20
+  healthPackCount: 8
+  speedBoostCount: 8
+  superBoostCount: 3
+  coinCount: 30
+  numberOfSpawnPoints: 8
+  minDistanceFromEnemies: 25
   patrolNodesPerEnemy: 20
   minNodeSpacing: 10
 --- !u!4 &1904088680
