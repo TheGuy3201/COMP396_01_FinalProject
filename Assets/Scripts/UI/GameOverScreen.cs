@@ -7,14 +7,13 @@ using UnityEngine.SceneManagement;
 
 public class GameOverScreen : MonoBehaviour
 {
+    public string gameOverText = "You Died";
     void Start()
     {
         // Find the TextMeshPro UGUI component in children and update its text.
-        TextMeshProUGUI gameOverTextComponent = GetComponentInChildren<TextMeshProUGUI>();
+        TextMeshProUGUI gameOverTextComponent = GameObject.FindWithTag("GameOverMSG").GetComponent<TextMeshProUGUI>();
         gameOverTextComponent.text = gameOverText;
     }
-
-    public string gameOverText = "You Died";
     // Called when Return To Main Menu button is pressed
     void Update()
     {
