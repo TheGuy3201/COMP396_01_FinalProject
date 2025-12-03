@@ -63,6 +63,8 @@ public class MazeGenerator
             else if (yDiff != 0)
                 direction = new Vector2Int(0, yDiff > 0 ? 1 : -1);
             
+            if (direction == Vector2Int.zero) break; // Safety check
+            
             Vector2Int next = current + direction;
             if (next.x >= 0 && next.x < mazeWidth && next.y >= 0 && next.y < mazeHeight)
             {
@@ -72,6 +74,10 @@ public class MazeGenerator
                 current = next;
             }
         }
+        
+        // Ensure exit cell is carved
+        visited[exitCell.x, exitCell.y] = true;
+        maze[exitCell.x * 2 + 1, exitCell.y * 2 + 1] = 0;
     }
     
     private void GenerateMazeRecursive(int x, int y)

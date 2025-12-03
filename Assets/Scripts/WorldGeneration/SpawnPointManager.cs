@@ -56,9 +56,36 @@ public class SpawnPointManager
     
     public void CreatePlayerSpawnPoint(GameObject prefab, Vector2Int playerCell)
     {
-        Vector3 pos = new Vector3(playerCell.x * 2 + 1, 0, playerCell.y * 2 + 1) * cellSize;
+        // Use the first connected position as the player spawn to guarantee it's valid
+        // Fallback to calculated position if no connected positions found
+        Vector3 pos;
+        
+        if (connectedPositions != null && connectedPositions.Count > 0)
+        {
+            // Find the closest valid position to the intended player cell
+            Vector3 intendedPos = new Vector3(playerCell.x * 2 + 1, 0, playerCell.y * 2 + 1);
+            pos = connectedPositions[0];
+            float minDist = Vector3.Distance(pos, intendedPos);
+            
+            foreach (Vector3 p in connectedPositions)
+            {
+                float dist = Vector3.Distance(p, intendedPos);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    pos = p;
+                }
+            }
+        }
+        else
+        {
+            // Fallback to original calculation if no connected positions yet
+            pos = new Vector3(playerCell.x * 2 + 1, 0, playerCell.y * 2 + 1) * cellSize;
+        }
+        
         PlayerSpawnPoint = Object.Instantiate(prefab, pos, Quaternion.identity, parent);
         PlayerSpawnPoint.name = "PlayerSpawnPoint";
+        Debug.Log($"Player spawn point created at {pos}");
     }
     
     public void CreateExitPoint(GameObject prefab, Vector2Int exitCell, string nextLevel)
