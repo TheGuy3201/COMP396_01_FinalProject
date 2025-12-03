@@ -1495,7 +1495,7 @@ MonoBehaviour:
   MoveSpeed: 2
   SprintSpeed: 5.335
   HasPowerUp: 0
-  RotationSmoothTime: 0.12
+  RotationSmoothTime: 0.242
   SpeedChangeRate: 10
   LandingAudioClip: {fileID: 8300000, guid: ff697d3070687ce4583faa0561a145a2, type: 3}
   FootstepAudioClips:
