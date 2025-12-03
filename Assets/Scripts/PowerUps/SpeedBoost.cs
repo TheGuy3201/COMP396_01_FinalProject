@@ -19,26 +19,41 @@ public class SpeedBoost : MonoBehaviour
     public void OnTriggerEnter(Collider other) // Detect collision with player to apply speed boost
     {
         Debug.Log("SpeedBoost: OnTriggerEnter with " + other.gameObject.name);
-        if (other.gameObject.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player") && playerCC != null)
         {
-            Vector3 currentVelocity = playerCC.velocity;
-            Vector3 boostDirection = currentVelocity.normalized;
-            playerCC.Move(boostDirection * boostedSpeed * Time.deltaTime);
-            Debug.Log("SpeedBoost: Player speed boosted to " + playerCC.velocity.magnitude);
-            StartCoroutine(ResetSpeedAfterDelay((float)boostTime));
+            originalSpeed = playerCC.velocity.magnitude;
+            Debug.Log("SpeedBoost: Applying speed boost for " + boostTime + " seconds");
+            StartCoroutine(ApplySpeedBoostOverTime((float)boostTime));
             Destroy(gameObject); // Consume the powerup
         }
     }
 
-    IEnumerator ResetSpeedAfterDelay(float delay) // Reset player speed after boost duration
+    IEnumerator ApplySpeedBoostOverTime(float duration) // Gradually apply speed boost over duration
     {
-        yield return new WaitForSeconds(delay);
+        float elapsedTime = 0f;
+        
+        while (elapsedTime < duration && playerCC != null)
+        {
+            elapsedTime += Time.deltaTime;
+            
+            // Get current movement direction
+            Vector3 currentVelocity = playerCC.velocity;
+            Vector3 moveDirection = currentVelocity.normalized;
+            
+            // Interpolate between original and boosted speed
+            float speedLerpFactor = boostedSpeed / (boostedSpeed + originalSpeed); // Weighted blend
+            float currentSpeed = Mathf.Lerp(originalSpeed, boostedSpeed, elapsedTime / duration);
+            
+            // Apply the boosted movement
+            playerCC.Move(moveDirection * currentSpeed * Time.deltaTime);
+            
+            yield return null;
+        }
+        
+        // Ensure we're back to original speed when boost ends
         if (playerCC != null)
         {
-            Vector3 currentVelocity = playerCC.velocity;
-            Vector3 resetDirection = currentVelocity.normalized;
-            playerCC.Move(resetDirection * originalSpeed * Time.deltaTime);
-            Debug.Log("SpeedBoost: Player speed reset to " + playerCC.velocity.magnitude);
+            Debug.Log("SpeedBoost: Boost expired, returning to normal speed");
         }
     }
 
