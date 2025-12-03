@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using StarterAssets;
 
-public class SpeedBoost : MonoBehaviour
+public class SuperBoost : MonoBehaviour
 {
-    [SerializeField] float speedMultiplier = 2.5f;
-    [SerializeField] int boostTime = 5;
+    [SerializeField] float speedMultiplier = 4.0f;
+    [SerializeField] float jumpMultiplier = 2.0f;
+    [SerializeField] int boostTime = 8;
 
-    public void OnTriggerEnter(Collider other) // Detect collision with player to apply speed boost
+    public void OnTriggerEnter(Collider other) // Detect collision with player to apply super boost
     {
         if (other.gameObject.CompareTag("Player"))
         {
@@ -18,23 +19,23 @@ public class SpeedBoost : MonoBehaviour
                 // Check if already boosted - don't stack boosts
                 if (playerController.HasPowerUp)
                 {
-                    Debug.Log("SpeedBoost: Player already has a powerup, ignoring");
+                    Debug.Log("SuperBoost: Player already has a powerup, ignoring");
                     Destroy(gameObject);
                     return;
                 }
                 
-                Debug.Log("SpeedBoost: Applying speed boost for " + boostTime + " seconds");
+                Debug.Log("SuperBoost: Applying super boost for " + boostTime + " seconds");
                 PowerUpManager powerUpManager = other.GetComponent<PowerUpManager>();
                 if (powerUpManager == null)
                 {
                     powerUpManager = other.gameObject.AddComponent<PowerUpManager>();
                 }
-                powerUpManager.ApplySpeedBoost(speedMultiplier, boostTime);
+                powerUpManager.ApplySuperBoost(speedMultiplier, jumpMultiplier, boostTime);
                 Destroy(gameObject); // Consume the powerup
             }
             else
             {
-                Debug.LogWarning("SpeedBoost: Player does not have ThirdPersonController component!");
+                Debug.LogWarning("SuperBoost: Player does not have ThirdPersonController component!");
             }
         }
     }
