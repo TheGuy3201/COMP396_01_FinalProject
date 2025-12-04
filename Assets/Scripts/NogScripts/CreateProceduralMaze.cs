@@ -1,8 +1,10 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using InitializerCollector;
 using UnityEngine;
+using NaughtyAttributes;
+using System.Collections.Generic;
+using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.SceneManagement;
+using UsefulClasses;
 using Random = UnityEngine.Random;
 using IModule= InitializerCollector.IModule;
 
@@ -11,70 +13,105 @@ using IModule= InitializerCollector.IModule;
 public class CreateProceduralMaze : MonoBehaviour,IModule
 {
     [Header("Maze settings")]
-    
-    [Header("Internal grid")]
     [SerializeField] private ValueInRange mazeGridWidth;
     [SerializeField] private ValueInRange mazeGridHeight;
+    [SerializeField] private float cellSize = 5f;
+    [SerializeField] [Range(0f, 0.3f)] private float extraPathChance = 0.1f; // Chance to remove walls for better connectivity 
+    private Dictionary<Vector2, int> mazeVirtualMap= new Dictionary<Vector2, int>();
     
-    [Header("Wall")]
-    [SerializeField] private float wallThickness;
-    [SerializeField] private float wallLength;
-    [SerializeField] private GameObject mazeWallPrefab;
-    [SerializeField] private Transform mazeWallsParent;
+    [Header("Components")]
+    [MustBeAssigned][SerializeField] private GameObject mazeWallPrefab;
+    [MustBeAssigned][SerializeField] private GameObject mazeGroundPrefab;
+    [MustBeAssigned][SerializeField] private Transform mazeElementsParent;
+    //private Transform mazeGroundElementsParent,mazeWallElementsParent;
+ 
     
-    private Vector3 mazeWallRealSizeInUnityUnits;
+
+    //private  bool[,] mazeWallXPositions,mazeWallZPositions;
     
     [Header("Pathways")]
-    [SerializeField] private ValueInRange mainPathSizeInTileCount;
-    [SerializeField] private ValueInRange alternativePathInTileCount;
-    private Dictionary<Vector2,bool>  coordinatesVisitedInPathCreation;
-    private List<Vector2[]> paths;
+    public ValueInRange mainPathSizeInTileCount;
+    public ValueInRange alternativePathInTileCount;
+    private Dictionary<Vector2,bool>  coordinatesVisitedInPathCreation= new Dictionary<Vector2, bool>() ;
+    private List<Vector2[]> paths= new List<Vector2[]>();
     
     [Header("Others")]
     [SerializeField] private string nextLevelName;
-
+    private static int currentLevel=0;
+    [SerializeField] private int lastLevel;
     private bool[,] coordinatesWithObjects;
     
     //Maze object created at end of this file
     private Dictionary<Vector2,MazeObject>  mazeObjects;
 
-    
+    [Button]
     public void InitializeScript()
     {
-        CreateInitialPath(false, false);
-        Debug.Log(string.Join(" -> ", paths[0]));
     }
-    //Functions will be placed here
-    public void CreateMaze()
+    
+    private void GoToNextLevel()
     {
+        currentLevel++;
+        if (currentLevel > lastLevel)
+        {
+            currentLevel = 0;
+            SceneManager.LoadScene("GameOver");
+        }
+    }
+    
+    
+    void GenerateVirtualMaze()
+    {
+        int mazeWallX = (int)mazeGridHeight.CurrentValue;
+        int mazeWallY = (int)mazeGridWidth.CurrentValue;
+
+        // Fill with walls
+        for (int x = 0; x < mazeWallX; x++)
+        {
+            for (int y = 0; y < mazeWallY; y++)
+            {
+                mazeVirtualMap.Add(new Vector2(x, y), 1);
+            }
+        }// Choose player start position (bottom-left area)
+
+        Vector2 widthAndHeight = new Vector2(
+            mazeWallX,
+            mazeWallY
+            );
+        CreateInitialPath(widthAndHeight,false,false);
         
+        
+        
+        
+        // First, create a guaranteed path from player to exit
+        //CreateGuaranteedPath();
+        
+        // Then fill in the rest of the maze using recursive backtracking
+       
+        
+        // Verify all cells were visited
+        // Add extra paths to improve connectivity and reduce dead ends
     }
+    
+    
+    
 
-    public void CreateInitialPath(bool startFromBorder, bool endOnBorder)
-    {
-    // 1. Garante inicialização das estruturas
-    if (coordinatesVisitedInPathCreation == null)
-    {
-        coordinatesVisitedInPathCreation = new Dictionary<Vector2, bool>();
-    }
 
-    if (paths == null)
+    public void CreateInitialPath(Vector2 widthAndHeight,bool startFromBorder, bool endOnBorder)
     {
-        paths = new List<Vector2[]>();
-    }
 
-    // 2. Define tamanho inteiro do grid com base nos ranges
-    int gridWidth = Mathf.Max(1, Mathf.FloorToInt(mazeGridWidth.MaxValue));
-    int gridHeight = Mathf.Max(1, Mathf.FloorToInt(mazeGridHeight.MaxValue));
 
     // 3. Define o tamanho desejado do caminho principal
-    int minPathLen = Mathf.Max(1, Mathf.FloorToInt(mainPathSizeInTileCount.MinValue));
-    int maxPathLen = Mathf.Max(minPathLen, Mathf.FloorToInt(mainPathSizeInTileCount.MaxValue));
-    int targetPathLength = Random.Range(minPathLen, maxPathLen + 1);
+    //int minPathLen = Mathf.Max(1, Mathf.FloorToInt(mainPathSizeInTileCount.MinValue));
+    //int maxPathLen = Mathf.Max(minPathLen, Mathf.FloorToInt(mainPathSizeInTileCount.MaxValue));
+    //int targetPathLength = Random.Range(minPathLen, maxPathLen + 1);
 
+
+
+    
     // 4. Escolhe posição inicial (borda ou interior)
-    int startX;
-    int startY;
+    int startX,startY,gridWidth=(int)widthAndHeight.x,gridHeight=(int)widthAndHeight.y;
+    
 
     if (startFromBorder)
     {
@@ -83,38 +120,39 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
         {
             case 0: // left
                 startX = 0;
-                startY = Random.Range(0, gridHeight);
+                startY = (int)Random.Range(0, widthAndHeight.y);
                 break;
             case 1: // right
-                startX = gridWidth - 1;
-                startY = Random.Range(0, gridHeight);
+                startX = (int)widthAndHeight.x - 1;
+                startY = (int)Random.Range(0, widthAndHeight.y);
                 break;
             case 2: // bottom
-                startX = Random.Range(0, gridWidth);
                 startY = 0;
+                startX = (int)Random.Range(0, widthAndHeight.x);
                 break;
             default: // top
-                startX = Random.Range(0, gridWidth);
-                startY = gridHeight - 1;
+                startY = (int)widthAndHeight.y - 1;
+                startX = (int)Random.Range(0, widthAndHeight.x);
                 break;
         }
     }
     else
     {
-        startX = Random.Range(0, gridWidth);
-        startY = Random.Range(0, gridHeight);
+        startX = (int)Random.Range(1, -1);
+        startY =(int) Random.Range(1, widthAndHeight.y-1);
     }
     
     Vector2 current = new Vector2(startX, startY);
     List<Vector2> currentPath = new List<Vector2> { current };
     coordinatesVisitedInPathCreation[current] = true;
+    int mainPathLenght = (int)mainPathSizeInTileCount.RandomizeValue();
+    int stepsLeft = mainPathLenght;
+    
     
     // 5. Funções locais de ajuda
     bool IsOnBorder(int x, int y) =>
         x == 0 || x == gridWidth - 1 || y == 0 || y == gridHeight - 1;
-
-    // 6. Caminhada aleatória criando o caminho principal
-    int stepsLeft = targetPathLength - 1;
+    
     int safety = gridWidth * gridHeight * 4; // trava de segurança
 
     while (stepsLeft > 0 && safety-- > 0)
@@ -123,25 +161,13 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
         int cy = Mathf.RoundToInt(current.y);
 
         // Vizinhos possíveis (4-direções)
-        List<Vector2> neighbours = GetValidNeighbours(cx, cy, gridWidth, gridHeight);
+        List<Vector2Int> neighbours = GetValidNeighbours(cx, cy, gridWidth, gridHeight);
 
         if (neighbours.Count == 0)
         {
             break;
         }
-
-        // Preferir vizinhos ainda não visitados
-        List<Vector2> unvisited = new List<Vector2>();
-        foreach (var n in neighbours)
-        {
-            if (!coordinatesVisitedInPathCreation.ContainsKey(n))
-            {
-                unvisited.Add(n);
-            }
-        }
-
-        List<Vector2> source = unvisited.Count > 0 ? unvisited : neighbours;
-        Vector2 next = source[Random.Range(0, source.Count)];
+        Vector2 next = neighbours[Random.Range(0, neighbours.Count)];
 
         current = next;
         currentPath.Add(current);
@@ -158,7 +184,7 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
 
         while (!IsOnBorder(cx, cy) && extraSafety-- > 0)
         {
-            List<Vector2> neighbours = GetValidNeighbours(cx, cy, gridWidth, gridHeight);
+            List<Vector2Int> neighbours = GetValidNeighbours(cx, cy, gridWidth, gridHeight);
 
             if (neighbours.Count == 0)
             {
@@ -181,8 +207,6 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
 }
 
     
-    
-    
     public bool IsNextCoordInsideGrid(int x, int y,int gridWidth, int gridHeight){
         if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
         {
@@ -193,43 +217,94 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
             return false;
         }
     }
-    
-    private List<Vector2> GetValidNeighbours(int cx, int cy, int gridWidth, int gridHeight)
-    {
-        var neighbours = new List<Vector2>(4);
 
-        // 4-directions: up, down, right, left
-        int[,] dirs =
+    private List<Vector2Int> GetValidNeighbours(int cx, int cy, int gridWidth, int gridHeight)
+    {
+        var neighbours = new List<Vector2Int>(4);
+    
+        Vector2Int[] dirs =
         {
-            { 0,  1 }, // Up
-            { 0, -1 }, // Down
-            { 1,  0 }, // Right
-            { -1, 0 }  // Left
+            new Vector2Int(0,  1), // Up
+            new Vector2Int(0, -1), // Down
+            new Vector2Int(1,  0), // Right
+            new Vector2Int(-1, 0)  // Left
         };
 
-        for (int i = 0; i < 4; i++)
-        {
-            int nx = cx + dirs[i, 0];
-            int ny = cy + dirs[i, 1];
 
-            if (IsNextCoordInsideGrid(nx, ny, gridWidth, gridHeight))
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            Vector2Int neighbour = new Vector2Int(cx, cy) + dirs[i];
+
+            if (coordinatesVisitedInPathCreation.ContainsKey(neighbour))
             {
-                neighbours.Add(new Vector2(nx, ny));
+                continue;
             }
+
+            if (IsNextCoordInsideGrid(neighbour.x, neighbour.y, gridWidth, gridHeight)==false)
+            {
+                continue;
+            }
+            
+            Vector2 fneighbourrA = neighbour+new Vector2Int(dirs[i].y, dirs[i].x);
+            Vector2 fneighbourrb = neighbour+new Vector2Int(dirs[i].y, (dirs[i].x)*-1);
+            
+            bool nextNeighbourCausesLoop= 
+                coordinatesVisitedInPathCreation.ContainsKey(fneighbourrA) ||
+                coordinatesVisitedInPathCreation.ContainsKey(fneighbourrb);
+            
+            if (nextNeighbourCausesLoop)
+            {
+                continue;
+            }
+            
+            neighbours.Add(neighbour);
         }
 
         return neighbours;
     }
 
+
+
+
+private Transform GetOrCreateChildFromMainParent(Transform mainParent,string childName)
+{
+    if (mainParent == null)
+    {
+        Debug.LogError("mazeElementsParent is not assigned.");
+        return null;
+    }
+    // Try to find an existing child called "FloorTiles"
+    for (int i = 0; i < mainParent.childCount; i++)
+    {
+        Transform child = mainParent.GetChild(i);
+        if (child.name == childName)
+        {
+            return child;
+        }
+    }
+    GameObject go = new GameObject(childName);
+    go.transform.SetParent(mainParent,false);
+    if (go.transform.childCount > 0)
+    {
+        foreach (Transform child in go.transform)
+        {
+            Destroy(child);
+        } 
+    }
+        
+    return go.transform;
+}
+    
     [Serializable]
     public class ValueInRange
     {
-        [SerializeField]private float minValue;
-        [SerializeField]private float maxValue;
+        public float minValue;//inclusive
+        public float maxValue;//exclusive
+        private float currentValue;
+        
         public ValueInRange()
         {
-            minValue = 0f;
-            maxValue = 1f;
+            CurrentValue=MaxValue;
         }
         public ValueInRange(float newMinValue, float newMaxValue)
         {
@@ -237,9 +312,18 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
             {
                 throw new ArgumentException("minValue cannot be greater than maxValue.", nameof(minValue));
             }
+            
 
-            minValue = newMinValue;
-            maxValue = newMaxValue;
+            MinValue = newMinValue;
+            MaxValue = newMaxValue;
+            CurrentValue=MinValue;
+        }
+
+
+        public float RandomizeValue()
+        {
+            CurrentValue=Random.Range(MinValue, MaxValue);
+            return CurrentValue;
         }
         public float MinValue
         {
@@ -268,6 +352,31 @@ public class CreateProceduralMaze : MonoBehaviour,IModule
                 }
 
                 maxValue = value;
+            }
+        }
+
+        public float CurrentValue
+        {
+            
+            get
+            {
+                if (currentValue < MinValue)
+                {
+                    currentValue=MinValue;
+                    return currentValue;
+                }
+
+                if (currentValue>MaxValue)
+                {
+                    currentValue=MaxValue;
+                    return currentValue;
+                }
+                return currentValue;
+            }
+            set
+            {
+                currentValue = value;
+                
             }
         }
     }

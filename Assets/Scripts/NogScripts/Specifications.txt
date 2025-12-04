@@ -1,0 +1,69 @@
+Create maze generator
+1-General objective
+1.1-Create a maze using a virtual maze
+1.2-The maze is represented with a grid of tiles, each one with walls in 4 directions.
+1.3-The script is called "MazeProceduralGeneratorV2"
+1.4-Has private serializedField variables "width" and "height"
+1.5-Has a private dictionary called virtualMaze,with Vector2Int as key, topic 3's class instance as value. the dictionary is not initialized yet.
+
+
+
+2-VirtualMaze()
+2.1-the maze is retangular.
+2.2-uses the public variables on 1.4
+2.3-uses the exclusive class on topic 3
+2.4-Creates a bidimensional array of the exclusive class
+2.5-The size of the array will be defined by the "width" and "height"
+2.6-The array will be filled with instances of the topic 3 class
+2.7-now, initialize virtualMaze with the bidimensional array as value. The x and y of each will be stored as the key, and the instance as value
+
+
+3-class 2DVirtualTileWithWalls
+3.1-Has variables "north,south,east,west". They all are Booleans.
+3.2-it is exclusive to inside the MazeProceduralGeneratorV2, no class outside it should have acess.
+3.3-It will be initialized with all them set to true
+
+
+
+
+1.6-has a private variable Vector2Int startingMazeVirtualPos
+1.7- has variable ValueInRange mainPathSizeInTileCount;
+1.8- has variable Dictionary<Vector2Int,Vector2Int[]> called validNeighbors, initialized but empty at first
+1.8.1- the key is position on the maze, and value is valid directions
+1.8.2- it will only be filled with GetValidNeighbors
+1.9- has variable Vector2Int arrayOfAllDirections (up,down,left,right)
+1.9.1- static readonly arrayOfAllDirections = { (0,1) [up], (0,-1) [down], (1,0) [right], (-1,0) [left] }
+
+4-GenerateMainPath()
+4.1-It will get a random position within the bounds of the virtualMaze
+4.1.1-The position will be stored at startingMazeVirtualPos
+4.2-Initialize a local variable called int mainPathSize, that uses ValueInRange.RandomizeValue(). It comes as float so convert to int using Mathf.RoundToInt
+4.2.1-Also has local variable Vector2Int current position, initially at starting pos
+4.3-searches if the current coordinate is a key in validNeighbors
+4.3.1-If it is not, uses GetValidNeighbors() function's with current position as parameter.
+4.3.2-now since 4.3.1 garantees. Select a random direction of the valid neighbors entry value to be the chosen direction
+4.3.3-then, use the OpenPassage function to create a connection between both
+4.3.4-after the connection has been made, move currentpos to the next
+4.4-repeat 4.3 decrementing from mainPathSize, maybe using a while loop.
+4.5- if at any moment during the main path creation the maze, it realizes there is no valid directions, backtrace it and close the connection you just opened
+4.5.1-since backtracing will be used, make a Vector2Int list of the  paths crossed 
+
+
+5-Void GetValidNeighbors(int currentX,int currentY, Vector2Int pathsCrossed) 
+5.1-Creates a initialized list of Vector2Int validNextNeighboars
+5.2-for each of the elements of 1.9 array, do the following (use FOR loop)
+5.2.1-create local variable called Vector2int neighboar, its value will be currentX+ArrayOfAllDirections[iteration].x,CurrentY +ArrayOfAllDirections[iteration].y
+5.2.2-checks if the neighboar value exists on the dictionary virtualMaze
+5.2.2.1-if it does not exists, use the continue to skip the below code in this loop
+5.2.3- checks if the neighboar exists in the dictionary validNeighbors
+5.2.3.1-since this code will be only reachable if 5.2.2 is true, get the value and see if the current iteration's value exists in the virtualMaze entry value's list of coordinates
+5.2.3.2-if it does not exists, use the continue to skip the below code in this loop
+5.2.4-checks if there is an entry of the neighbor on the validNeighbors dictionary, and, if there is, verify if the direction i would go is already open.
+5.2.4.1-if its already open, use the continue to skip the code below this loop. If its already open, i dont want to "open again", only want to open whats closed
+5.2.5- if the neighboar exists in the pathsCrossed list,use the continue command to skip the code below
+5.2.5-adds the direction to the validNextNeighboars list. This code will only be reachable if the above conditions  allow it.
+5.3-add the list as array to the dictionary with currentX and currentY as key. Even if the current list is empty, make it an empty array.
+
+
+
+
