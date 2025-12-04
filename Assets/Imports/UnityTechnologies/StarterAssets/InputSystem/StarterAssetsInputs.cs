@@ -94,12 +94,11 @@ namespace StarterAssets
 #endif
 		}
 
-		private void SetCursorState(bool newState)
-		{
-			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
-		}
-
-		private void ReturnToMainMenuInput(bool isPressed)
+	private void SetCursorState(bool newState)
+	{
+		Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+		Cursor.visible = !newState; // Make cursor visible when unlocked
+	}		private void ReturnToMainMenuInput(bool isPressed)
 		{
 			if (isPressed)
 			{

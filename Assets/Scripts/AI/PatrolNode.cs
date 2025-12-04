@@ -2,9 +2,7 @@ using UnityEngine;
 
 public class PatrolNode : MonoBehaviour
 {
-    // Simple marker component for patrol nodes
-    // Can add visual gizmos or additional data here if needed
-    
+    // Simple marker for patrol nodes
     private void OnDrawGizmos()
     {
         // Draw a small sphere to visualize patrol nodes in the editor

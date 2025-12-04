@@ -5,7 +5,7 @@ using UnityEngine;
 public class HealthRestore : MonoBehaviour
 {
     [SerializeField] int restoreAmount = 20;
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other) // Detect collision with player to restore specified health
     {
         if (other.CompareTag("Player"))
         {

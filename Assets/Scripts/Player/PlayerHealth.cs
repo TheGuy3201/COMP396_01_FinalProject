@@ -33,7 +33,7 @@ public class PlayerHealth : MonoBehaviour
     void Die()
     {
         Debug.Log("Player died!");
-        // Add death logic here (respawn, game over screen, etc.)
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameOver");
     }
     
     public int GetCurrentHealth()
