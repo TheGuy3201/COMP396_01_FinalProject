@@ -49,7 +49,7 @@ Create maze generator
 4.5.1-since backtracing will be used, make a Vector2Int list of the  paths crossed 
 
 
-5-Void GetValidNeighbors(int currentX,int currentY, Vector2Int pathsCrossed) 
+5-Void GetValidNeighbors(int currentX,int currentY, Vector2Int[] pathsCrossed) 
 5.1-Creates a initialized list of Vector2Int validNextNeighboars
 5.2-for each of the elements of 1.9 array, do the following (use FOR loop)
 5.2.1-create local variable called Vector2int neighboar, its value will be currentX+ArrayOfAllDirections[iteration].x,CurrentY +ArrayOfAllDirections[iteration].y

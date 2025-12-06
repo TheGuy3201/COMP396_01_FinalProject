@@ -16,6 +16,7 @@ namespace InitializerCollector
 
         private void Start()
         {
+            
             foreach (UnityEvent script in scriptExecutionOrder)
             {
                 script?.Invoke();

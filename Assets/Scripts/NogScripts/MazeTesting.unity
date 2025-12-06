@@ -154,8 +154,8 @@ MonoBehaviour:
   scriptExecutionOrder:
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 880296437}
-        m_TargetAssemblyTypeName: CreateProceduralMaze, Assembly-CSharp
+      - m_Target: {fileID: 880296439}
+        m_TargetAssemblyTypeName: MazeProceduralGeneratorV2, Assembly-CSharp
         m_MethodName: InitializeScript
         m_Mode: 0
         m_Arguments:
@@ -191,7 +191,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 880296438}
-  - component: {fileID: 880296437}
+  - component: {fileID: 880296439}
   m_Layer: 0
   m_Name: CreateProceduralMaze
   m_TagString: Untagged
@@ -199,39 +199,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &880296437
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 880296436}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c9b9ccd21a46374cbabca045f3faa92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mazeGridWidth:
-    minValue: 10
-    maxValue: 10
-  mazeGridHeight:
-    minValue: 10
-    maxValue: 10
-  cellSize: 5
-  extraPathChance: 0.1
-  mazeWallPrefab: {fileID: 5001913024463558014, guid: e659735c9a8d8c943b89937c57dfed41,
-    type: 3}
-  mazeGroundPrefab: {fileID: 3608735715035005931, guid: b23609e54b77345488bfe76dee11149d,
-    type: 3}
-  mazeElementsParent: {fileID: 1018477005}
-  mainPathSizeInTileCount:
-    minValue: 5
-    maxValue: 10
-  alternativePathInTileCount:
-    minValue: 5
-    maxValue: 10
-  nextLevelName: 
-  lastLevel: 0
 --- !u!4 &880296438
 Transform:
   m_ObjectHideFlags: 0
@@ -247,6 +214,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 815273713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880296439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880296436}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9eb72a1022d20a41b26427a07e00784, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mazeWidth: 5
+  mazeHeight: 5
+  tileWidthLengthScale: 1
+  wallThicknessScale: 0.2
+  wallHeightScale: 5
+  wallWidthScale: 1
+  mazeWallPrefab: {fileID: 5001913024463558014, guid: e659735c9a8d8c943b89937c57dfed41,
+    type: 3}
+  mazeGroundPrefab: {fileID: 3608735715035005931, guid: b23609e54b77345488bfe76dee11149d,
+    type: 3}
+  mazeElementsParent: {fileID: 1018477005}
 --- !u!1 &1018477004
 GameObject:
   m_ObjectHideFlags: 0
