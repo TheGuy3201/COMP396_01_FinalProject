@@ -122,6 +122,37 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &761132894
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 761132895}
+  m_Layer: 0
+  m_Name: GroundSubParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &761132895
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 761132894}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1018477005}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &815273711
 GameObject:
   m_ObjectHideFlags: 0
@@ -226,17 +257,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9eb72a1022d20a41b26427a07e00784, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mazeWidth: 5
-  mazeHeight: 5
+  mazeWidth: 10
+  mazeHeight: 10
   tileWidthLengthScale: 1
-  wallThicknessScale: 0.2
-  wallHeightScale: 5
+  wallThicknessScale: 0.1
+  wallHeightScale: 0.5
   wallWidthScale: 1
-  mazeWallPrefab: {fileID: 5001913024463558014, guid: e659735c9a8d8c943b89937c57dfed41,
+  mazeWallPrefab: {fileID: 3522767506167275444, guid: deac3b51803ff26448e14d2c75ecaa43,
     type: 3}
-  mazeGroundPrefab: {fileID: 3608735715035005931, guid: b23609e54b77345488bfe76dee11149d,
+  mazeGroundPrefab: {fileID: 7220835108203205109, guid: b23609e54b77345488bfe76dee11149d,
     type: 3}
   mazeElementsParent: {fileID: 1018477005}
+  mazeElementsWallSubParent: {fileID: 0}
+  mazeElementsGroundSubParent: {fileID: 0}
+  mainPathSizeInTileCount:
+    minValue: 20
+    maxValue: 25
+  mazeObjectDefinitions:
+  - prefab: {fileID: 1092505988225873840, guid: 90c4cd5bba97d2748ae34bfa542ab42e,
+      type: 3}
+    minimumAmount: 1
+    maximumAmount: 1
+    probability: 1
+    minimumDistanceFromSimilarity: 0
+    maximumDistanceFromSimilarity: 0
+    minimumDistanceFromOtherObjects: 0
+    maximumDistanceFromOtherObjects: 0
+    placement: 0
+    shouldBePlacedOnBorder: 2
+    probabilityIfOptional: 1
+  - prefab: {fileID: 1770322454193727903, guid: f7ec2123ff4892741bac4332f9f2e279,
+      type: 3}
+    minimumAmount: 1
+    maximumAmount: 1
+    probability: 1
+    minimumDistanceFromSimilarity: 0
+    maximumDistanceFromSimilarity: 0
+    minimumDistanceFromOtherObjects: 0
+    maximumDistanceFromOtherObjects: 0
+    placement: 1
+    shouldBePlacedOnBorder: 2
+    probabilityIfOptional: 1
 --- !u!1 &1018477004
 GameObject:
   m_ObjectHideFlags: 0
@@ -265,7 +326,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 761132895}
+  - {fileID: 2100469868}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1814136787
@@ -478,6 +541,37 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &2100469867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2100469868}
+  m_Layer: 0
+  m_Name: WallSubParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2100469868
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100469867}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1018477005}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
