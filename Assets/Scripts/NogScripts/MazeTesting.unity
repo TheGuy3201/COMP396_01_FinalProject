@@ -257,8 +257,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9eb72a1022d20a41b26427a07e00784, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mazeWidth: 10
-  mazeHeight: 10
+  mazeWidth: 15
+  mazeHeight: 15
   tileWidthLengthScale: 1
   wallThicknessScale: 0.1
   wallHeightScale: 0.5
@@ -268,34 +268,48 @@ MonoBehaviour:
   mazeGroundPrefab: {fileID: 7220835108203205109, guid: b23609e54b77345488bfe76dee11149d,
     type: 3}
   mazeElementsParent: {fileID: 1018477005}
-  mazeElementsWallSubParent: {fileID: 0}
-  mazeElementsGroundSubParent: {fileID: 0}
   mainPathSizeInTileCount:
-    minValue: 20
+    minValue: 15
     maxValue: 25
+  maxAttemptsToMatchRealDistance: 3
   mazeObjectDefinitions:
   - prefab: {fileID: 1092505988225873840, guid: 90c4cd5bba97d2748ae34bfa542ab42e,
       type: 3}
     minimumAmount: 1
     maximumAmount: 1
     probability: 1
-    minimumDistanceFromSimilarity: 0
-    maximumDistanceFromSimilarity: 0
-    minimumDistanceFromOtherObjects: 0
-    maximumDistanceFromOtherObjects: 0
-    placement: 0
-    shouldBePlacedOnBorder: 2
+    minimumDistanceFromSimilarity: 1
+    maximumDistanceFromSimilarity: 100
+    minimumDistanceFromOtherObjects: 1
+    maximumDistanceFromOtherObjects: 100
+    priorityIfThereAreDistanceConflicts: 10
+    objectPlacement: 0
+    shouldBePlacedOnBorder: 1
     probabilityIfOptional: 1
   - prefab: {fileID: 1770322454193727903, guid: f7ec2123ff4892741bac4332f9f2e279,
       type: 3}
     minimumAmount: 1
     maximumAmount: 1
     probability: 1
-    minimumDistanceFromSimilarity: 0
-    maximumDistanceFromSimilarity: 0
-    minimumDistanceFromOtherObjects: 0
-    maximumDistanceFromOtherObjects: 0
-    placement: 1
+    minimumDistanceFromSimilarity: 1
+    maximumDistanceFromSimilarity: 100
+    minimumDistanceFromOtherObjects: 1
+    maximumDistanceFromOtherObjects: 100
+    priorityIfThereAreDistanceConflicts: 9
+    objectPlacement: 1
+    shouldBePlacedOnBorder: 1
+    probabilityIfOptional: 1
+  - prefab: {fileID: 4038065158757601177, guid: 000313415d82093448b99b963f20bcbb,
+      type: 3}
+    minimumAmount: 2
+    maximumAmount: 4
+    probability: 1
+    minimumDistanceFromSimilarity: 1
+    maximumDistanceFromSimilarity: 100
+    minimumDistanceFromOtherObjects: 3
+    maximumDistanceFromOtherObjects: 100
+    priorityIfThereAreDistanceConflicts: 2
+    objectPlacement: 2
     shouldBePlacedOnBorder: 2
     probabilityIfOptional: 1
 --- !u!1 &1018477004

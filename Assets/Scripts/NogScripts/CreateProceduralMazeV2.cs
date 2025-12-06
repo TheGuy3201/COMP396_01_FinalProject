@@ -24,10 +24,13 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     [MustBeAssigned] [SerializeField] private GameObject mazeGroundPrefab;
     [MustBeAssigned] [SerializeField] private Transform mazeElementsParent;
 
-    public Transform mazeElementsWallSubParent, mazeElementsGroundSubParent, mazeElementsObjectsSubParent;
+    private Transform mazeElementsWallSubParent, mazeElementsGroundSubParent, mazeElementsObjectsSubParent;
 
     [Header("Pathways")]
     public ValueInRange mainPathSizeInTileCount;
+
+    [Header("Real Distance Control")]
+    [Min(1)] [SerializeField] private int maxAttemptsToMatchRealDistance = 5;
 
     [Header("Objects")]
     [SerializeField] private List<MazeObject> mazeObjectDefinitions = new List<MazeObject>();
@@ -47,19 +50,80 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     // =========================================================
     // Init
     // =========================================================
-    public void InitializeScript()
+public void InitializeScript()
+{
+    Debug.Log("Initializing Procedural Maze with real-distance check...");
+
+    // escolhe início e fim aleatórios dentro da grid
+    Vector2Int start, end;
+    ChooseRandomStartEnd(out start, out end);
+    Debug.Log($"[MazeProceduralGeneratorV2] Start={start}, End={end}");
+
+    // sorteia UMA vez o tamanho alvo do caminho principal
+    int targetMainLength = Mathf.Max(1, Mathf.RoundToInt(mainPathSizeInTileCount.RandomizeValue()));
+    Debug.Log($"[MazeProceduralGeneratorV2] Target main path length = {targetMainLength}");
+
+    List<Vector2Int> bestMainPath = null;
+    Dictionary<Vector2Int, VirtualTile2DWithWalls> bestMaze = null;
+    int bestRealLen = -1;
+
+    // várias tentativas para tentar garantir que o caminho real não seja muito curto
+    for (int attempt = 0; attempt < maxAttemptsToMatchRealDistance; attempt++)
     {
-        Debug.Log("Initializing Procedural Maze...");
+        Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}/{maxAttemptsToMatchRealDistance}");
 
-        VirtualMaze(); // enche tudo de parede e registra corners (corners hoje são inúteis, mas ok)
+        // cria um novo virtualMaze "cheio de paredes"
+        VirtualMaze();
 
-        Vector2Int start = new Vector2Int(0, 0);
-        Vector2Int end   = new Vector2Int(mazeWidth - 1, mazeHeight - 1);
+        // gera o caminho principal + ramificações
+        var mainPath = GenerateMainPath(start, end, targetMainLength);
 
-        var mainPath = GenerateMainPath(start, end); // abre paredes no virtualMaze
-        PlaceMazeObjects(mainPath);                  // decide onde vão os objetos
-        BuildMazeVisual();                           // constrói visual com base no virtualMaze + objetos
+        // calcula o menor caminho REAL (depois de todas as aberturas de parede)
+        int realShortestLen = ComputeShortestPathLength(start, end);
+
+        if (realShortestLen <= 0)
+        {
+            Debug.LogWarning("[MazeProceduralGeneratorV2] Start e End ficaram desconectados nessa tentativa.");
+            continue;
+        }
+
+        Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}: realShortestLen={realShortestLen}");
+
+        // se o menor caminho real for >= alvo, aceitável, podemos parar
+        if (realShortestLen >= targetMainLength)
+        {
+            bestMaze = CloneMaze(virtualMaze);
+            bestMainPath = new List<Vector2Int>(mainPath);
+            bestRealLen = realShortestLen;
+            Debug.Log($"[MazeProceduralGeneratorV2] Accepted attempt {attempt + 1} (real >= target).");
+            break;
+        }
+
+        // caso contrário, guarda o melhor
+        if (realShortestLen > bestRealLen)
+        {
+            bestRealLen = realShortestLen;
+            bestMaze = CloneMaze(virtualMaze);
+            bestMainPath = new List<Vector2Int>(mainPath);
+            Debug.Log($"[MazeProceduralGeneratorV2] New best realShortestLen={bestRealLen}");
+        }
     }
+
+    if (bestMaze == null || bestMainPath == null || bestMainPath.Count == 0)
+    {
+        Debug.LogError("[MazeProceduralGeneratorV2] Failed to generate any valid maze.");
+        return;
+    }
+
+    // aplica o melhor maze encontrado
+    virtualMaze = bestMaze;
+
+    // prepara objetos e visual
+    mazeObjects ??= new Dictionary<Vector2Int, MazeObject>();
+    PlaceMazeObjects(bestMainPath);
+    BuildMazeVisual();
+    Debug.Log($"[MazeProceduralGeneratorV2] Final real shortest path length = {bestRealLen}");
+}
 
     private void VirtualMaze()
     {
@@ -193,16 +257,39 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
 
         return result;
     }
+    
+    private void ChooseRandomStartEnd(out Vector2Int start, out Vector2Int end)
+    {
+        if (mazeWidth <= 0 || mazeHeight <= 0)
+        {
+            Debug.LogError("[MazeProceduralGeneratorV2] Maze size inválido para escolher start/end.");
+            start = Vector2Int.zero;
+            end   = Vector2Int.zero;
+            return;
+        }
 
-    public Vector2Int[] GenerateMainPath(Vector2Int start, Vector2Int end)
+        start = new Vector2Int(
+            Random.Range(0, mazeWidth),
+            Random.Range(0, mazeHeight)
+        );
+
+        // garante que end seja diferente de start
+        do
+        {
+            end = new Vector2Int(
+                Random.Range(0, mazeWidth),
+                Random.Range(0, mazeHeight)
+            );
+        } while (end == start);
+    }
+
+    public Vector2Int[] GenerateMainPath(Vector2Int start, Vector2Int end, int targetMainLength)
     {
         if (!virtualMaze.ContainsKey(start) || !virtualMaze.ContainsKey(end))
         {
             Debug.LogError($"[MazeProceduralGeneratorV2] Start {start} ou End {end} fora do maze.");
             return Array.Empty<Vector2Int>();
         }
-
-        int targetMainLength = Mathf.Max(1, Mathf.RoundToInt(mainPathSizeInTileCount.RandomizeValue()));
 
         var mainPath = new List<Vector2Int>();
         var visited = new HashSet<Vector2Int>();
@@ -353,6 +440,86 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     }
 
     // =========================================================
+    // SHORTEST PATH (BFS) NO virtualMaze
+    // =========================================================
+    private int ComputeShortestPathLength(Vector2Int start, Vector2Int end)
+    {
+        if (!virtualMaze.ContainsKey(start) || !virtualMaze.ContainsKey(end))
+            return -1;
+
+        var queue = new Queue<Vector2Int>();
+        var dist = new Dictionary<Vector2Int, int>();
+
+        queue.Enqueue(start);
+        dist[start] = 0;
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            int currentDist = dist[current];
+
+            if (current == end)
+                return currentDist;
+
+            foreach (var dir in CardinalDirections)
+            {
+                Vector2Int next = current + dir;
+
+                if (!virtualMaze.ContainsKey(next))
+                    continue;
+
+                if (HasWallBetween(current, next))
+                    continue;
+
+                if (dist.ContainsKey(next))
+                    continue;
+
+                dist[next] = currentDist + 1;
+                queue.Enqueue(next);
+            }
+        }
+
+        return -1; // sem caminho
+    }
+
+    private bool HasWallBetween(Vector2Int a, Vector2Int b)
+    {
+        Vector2Int dir = b - a;
+
+        if (!virtualMaze.TryGetValue(a, out var tileA))
+            return true;
+
+        if (!virtualMaze.TryGetValue(b, out var tileB))
+            return true;
+
+        // se qualquer lado diz que tem parede nessa direção, bloqueia
+        if (tileA.HasWall(dir))
+            return true;
+
+        if (tileB.HasWall(-dir))
+            return true;
+
+        return false;
+    }
+
+    private Dictionary<Vector2Int, VirtualTile2DWithWalls> CloneMaze(
+        Dictionary<Vector2Int, VirtualTile2DWithWalls> source)
+    {
+        var clone = new Dictionary<Vector2Int, VirtualTile2DWithWalls>(source.Count);
+
+        foreach (var kvp in source)
+        {
+            var newTile = new VirtualTile2DWithWalls
+            {
+                wallDirections = new List<Vector2Int>(kvp.Value.wallDirections)
+            };
+            clone[kvp.Key] = newTile;
+        }
+
+        return clone;
+    }
+
+    // =========================================================
     // OBJECT PLACEMENT
     // =========================================================
     private void PlaceMazeObjects(IReadOnlyList<Vector2Int> mainPath)
@@ -395,80 +562,103 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
         }
     }
 
-    private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2Int> mainPath)
+private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2Int> mainPath)
+{
+    List<Vector2Int> candidates = new List<Vector2Int>();
+
+    // 1) Baseado em ObjectPlacement
+    Vector2Int? forcedPathCell = null;
+
+    switch (objDef.objectPlacement)
     {
-        List<Vector2Int> candidates = new List<Vector2Int>();
+        case MazeObject.ObjectPlacement.AtStartOfMainPath:
+            if (mainPath != null && mainPath.Count > 0)
+            {
+                var c = mainPath[0];
+                candidates.Add(c);
+                forcedPathCell = c;
+            }
+            break;
 
-        // 1) Baseado em ObjectPlacement
-        switch (objDef.objectPlacement)
-        {
-            case MazeObject.ObjectPlacement.AtStartOfMainPath:
-                if (mainPath != null && mainPath.Count > 0)
-                    candidates.Add(mainPath[0]);
-                break;
+        case MazeObject.ObjectPlacement.AtEndOfMainPath:
+            if (mainPath != null && mainPath.Count > 0)
+            {
+                var c = mainPath[mainPath.Count - 1];
+                candidates.Add(c);
+                forcedPathCell = c;
+            }
+            break;
 
-            case MazeObject.ObjectPlacement.AtEndOfMainPath:
-                if (mainPath != null && mainPath.Count > 0)
-                    candidates.Add(mainPath[mainPath.Count - 1]);
-                break;
-
-            case MazeObject.ObjectPlacement.AnywhereNotYetOccupied:
-                for (int x = 0; x < mazeWidth; x++)
+        case MazeObject.ObjectPlacement.AnywhereNotYetOccupied:
+            for (int x = 0; x < mazeWidth; x++)
+            {
+                for (int y = 0; y < mazeHeight; y++)
                 {
-                    for (int y = 0; y < mazeHeight; y++)
-                    {
-                        var cell = new Vector2Int(x, y);
-                        if (!mazeObjects.ContainsKey(cell))
-                            candidates.Add(cell);
-                    }
+                    var cell = new Vector2Int(x, y);
+                    if (!mazeObjects.ContainsKey(cell))
+                        candidates.Add(cell);
                 }
-                break;
-        }
-
-        if (candidates.Count == 0)
-            return null;
-
-        // 2) BorderPlacement
-        bool wantBorder;
-        switch (objDef.shouldBePlacedOnBorder)
-        {
-            case MazeObject.BorderPlacement.Should:
-                wantBorder = true;
-                candidates = FilterByBorder(candidates, wantBorder);
-                break;
-
-            case MazeObject.BorderPlacement.ShouldNot:
-                wantBorder = false;
-                candidates = FilterByBorder(candidates, wantBorder);
-                break;
-
-            case MazeObject.BorderPlacement.Optional:
-            default:
-                wantBorder = Random.value < objDef.probabilityIfOptional;
-                candidates = FilterByBorder(candidates, wantBorder, allowFallback: true);
-                break;
-        }
-
-        if (candidates.Count == 0)
-            return null;
-
-        // 3) Embaralhar candidatos para randomizar
-        Shuffle(candidates);
-
-        // 4) Checar distâncias mínimas
-        foreach (var cell in candidates)
-        {
-            if (mazeObjects.ContainsKey(cell))
-                continue;
-
-            if (IsTooCloseToOtherObjects(cell, objDef))
-                continue;
-
-            return cell;
-        }
-
-        return null;
+            }
+            break;
     }
+
+    if (candidates.Count == 0)
+        return null;
+
+    // 2) BorderPlacement
+    bool wantBorder;
+    switch (objDef.shouldBePlacedOnBorder)
+    {
+        case MazeObject.BorderPlacement.Should:
+            wantBorder = true;
+            candidates = FilterByBorder(candidates, wantBorder);
+            break;
+
+        case MazeObject.BorderPlacement.ShouldNot:
+            wantBorder = false;
+            candidates = FilterByBorder(candidates, wantBorder);
+            break;
+
+        case MazeObject.BorderPlacement.Optional:
+        default:
+            wantBorder = Random.value < objDef.probabilityIfOptional;
+            candidates = FilterByBorder(candidates, wantBorder, allowFallback: true);
+            break;
+    }
+
+    // >>> TRATAMENTO ESPECIAL PARA START/END <<<
+    if (candidates.Count == 0 && forcedPathCell.HasValue)
+    {
+        Debug.LogWarning(
+            $"[MazeProceduralGeneratorV2] Border rule for {objDef.objectPlacement} " +
+            $"eliminou todas as opções. Usando mesmo assim a célula {forcedPathCell.Value}.");
+        candidates.Add(forcedPathCell.Value);
+    }
+
+    if (candidates.Count == 0)
+        return null;
+
+    // 3) Embaralhar candidatos para randomizar
+    Shuffle(candidates);
+
+    // 4) Checar distâncias mínimas
+    foreach (var cell in candidates)
+    {
+        if (mazeObjects.ContainsKey(cell))
+            continue;
+
+        if (IsTooCloseToOtherObjects(cell, objDef))
+            continue;
+
+        return cell;
+    }
+
+    // Se chegou aqui, não achou célula que respeite distâncias
+    Debug.LogWarning(
+        $"[MazeProceduralGeneratorV2] Não foi possível posicionar objeto '{objDef.Prefab?.name}' " +
+        $"para placement {objDef.objectPlacement} respeitando distâncias mínimas.");
+    return null;
+}
 
     private List<Vector2Int> FilterByBorder(List<Vector2Int> input, bool border, bool allowFallback = false)
     {
