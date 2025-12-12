@@ -40,10 +40,10 @@ public class EnemyAI : MonoBehaviour
     
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>(); 
+        agent = GetComponent<NavMeshAgent>(); // Get the NavMeshAgent component
         
         // Find player by tag
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player"); // Find the player GameObject
         if (playerObj != null)
         {
             player = playerObj.transform;
@@ -54,15 +54,15 @@ public class EnemyAI : MonoBehaviour
         }
         
         // Get patrol nodes from the maze generator script
-        ProceduralMaze maze = FindObjectOfType<ProceduralMaze>();
+        ProceduralMaze maze = FindObjectOfType<ProceduralMaze>(); // Find the ProceduralMaze component
         if (maze != null)
         {
             patrolNodes = maze.GetPatrolNodes(); //Calls a method to get all patrol Nodes
             if (patrolNodes.Count > 0)
             {
                 // Start patrolling to nearest node
-                FindNearestPatrolNode();
-                StartCoroutine(PatrolRoutine());
+                FindNearestPatrolNode(); // Find the nearest patrol node
+                StartCoroutine(PatrolRoutine()); // Start the patrol routine
             }
         }
         
@@ -81,7 +81,7 @@ public class EnemyAI : MonoBehaviour
         {
             case AIState.Patrolling:
                 // Check if player is in detection range
-                if (distanceToPlayer <= detectionRange && CanSeePlayer())
+                if (distanceToPlayer <= detectionRange && CanSeePlayer()) // Check if player is within detection range and visible 
                 {
                     EnterChaseState();
                 }
@@ -89,7 +89,7 @@ public class EnemyAI : MonoBehaviour
                 
             case AIState.Chasing:
                 // Check if player is in attack range
-                if (distanceToPlayer <= attackRange)
+                if (distanceToPlayer <= attackRange) // Check if player is within attack range
                 {
                     EnterAttackState();
                 }

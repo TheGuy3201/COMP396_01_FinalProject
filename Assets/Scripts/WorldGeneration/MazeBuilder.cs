@@ -5,15 +5,15 @@ public class MazeBuilder
     private GameObject wallPrefab;
     private float cellSize;
     private Transform parent;
-    
-    public MazeBuilder(GameObject wallPrefab, float cellSize, Transform parent)
+
+    public MazeBuilder(GameObject wallPrefab, float cellSize, Transform parent) // Constructor for MazeBuilder
     {
         this.wallPrefab = wallPrefab;
         this.cellSize = cellSize;
         this.parent = parent;
     }
-    
-    public void BuildMaze(int[,] maze)
+
+    public void BuildMaze(int[,] maze) // Build the maze from the 2D array
     {
         if (wallPrefab == null)
         {
@@ -46,8 +46,8 @@ public class MazeBuilder
         
         BuildBoundaryWalls(maze);
     }
-    
-    private void BuildBoundaryWalls(int[,] maze)
+
+    private void BuildBoundaryWalls(int[,] maze) // Build the boundary walls
     {
         int maxX = maze.GetLength(0) - 1;
         int maxY = maze.GetLength(1) - 1;

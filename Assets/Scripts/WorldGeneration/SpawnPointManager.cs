@@ -18,6 +18,7 @@ public class SpawnPointManager
         this.parent = parent;
     }
     
+    // Find all connected open positions in the maze for valid spawn locations
     public void FindConnectedPositions(int[,] maze)
     {
         connectedPositions = new List<Vector3>();
@@ -54,6 +55,7 @@ public class SpawnPointManager
         }
     }
     
+    // Create the player spawn point at a valid connected position
     public void CreatePlayerSpawnPoint(GameObject prefab, Vector2Int playerCell)
     {
         // Use the first connected position as the player spawn to guarantee it's valid

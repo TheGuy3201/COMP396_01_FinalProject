@@ -59,7 +59,7 @@ public class EnemySpawner : MonoBehaviour
             if (spawnPoint != null)
             {
                 // Raise enemy spawn position above ground
-                Vector3 spawnPosition = spawnPoint.transform.position + Vector3.up * 1f;
+                Vector3 spawnPosition = spawnPoint.transform.position + Vector3.up * 1f; // Raise spawn position
                 
                 GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
                 enemy.name = $"Enemy_{spawnedEnemies.Count}";
