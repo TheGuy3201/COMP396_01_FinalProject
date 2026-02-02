@@ -10,10 +10,10 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     [SerializeField] private int mazeWidth;
     [SerializeField] private int mazeHeight;
 
-    // largura do chão de cada célula (no momento não estou usando, mas pode servir depois)
+    // floor width/length of each cell (not used right now, but may be helpful later)
     [SerializeField] private float tileWidthLengthScale = 1f;
 
-    // espaço entre tiles, preenchido por paredes
+    // gap between tiles, filled by walls
     [SerializeField] private float wallThicknessScale = 0.2f;
 
     [SerializeField] private float wallHeightScale = 1f;
@@ -23,8 +23,9 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     [MustBeAssigned] [SerializeField] private GameObject mazeWallPrefab;
     [MustBeAssigned] [SerializeField] private GameObject mazeGroundPrefab;
     [MustBeAssigned] [SerializeField] private Transform mazeElementsParent;
+    [MustBeAssigned] [SerializeField] private GameObject cornerPrefab;
 
-    private Transform mazeElementsWallSubParent, mazeElementsGroundSubParent, mazeElementsObjectsSubParent;
+    private Transform mazeElementsWallSubParent, mazeElementsGroundSubParent, mazeElementsObjectsSubParent, mazeElementsCornersSubParent;
 
     [Header("Pathways")]
     public ValueInRange mainPathSizeInTileCount;
@@ -37,7 +38,7 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
 
     private Dictionary<Vector2Int, VirtualTile2DWithWalls> virtualMaze;
     private Dictionary<Vector2Int, VirtualCorner2D> virtualCorners;
-    private Dictionary<Vector2Int, MazeObject> mazeObjects; // célula -> tipo de objeto
+    private Dictionary<Vector2Int, MazeObject> mazeObjects; // cell -> object type
 
     private static readonly Vector2Int[] CardinalDirections =
     {
@@ -50,80 +51,72 @@ public class MazeProceduralGeneratorV2 : MonoBehaviour, IModule
     // =========================================================
     // Init
     // =========================================================
-public void InitializeScript()
-{
-    Debug.Log("Initializing Procedural Maze with real-distance check...");
-
-    // escolhe início e fim aleatórios dentro da grid
-    Vector2Int start, end;
-    ChooseRandomStartEnd(out start, out end);
-    Debug.Log($"[MazeProceduralGeneratorV2] Start={start}, End={end}");
-
-    // sorteia UMA vez o tamanho alvo do caminho principal
-    int targetMainLength = Mathf.Max(1, Mathf.RoundToInt(mainPathSizeInTileCount.RandomizeValue()));
-    Debug.Log($"[MazeProceduralGeneratorV2] Target main path length = {targetMainLength}");
-
-    List<Vector2Int> bestMainPath = null;
-    Dictionary<Vector2Int, VirtualTile2DWithWalls> bestMaze = null;
-    int bestRealLen = -1;
-
-    // várias tentativas para tentar garantir que o caminho real não seja muito curto
-    for (int attempt = 0; attempt < maxAttemptsToMatchRealDistance; attempt++)
+    public void InitializeScript()
     {
-        Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}/{maxAttemptsToMatchRealDistance}");
+        Debug.Log("Initializing Procedural Maze with real-distance check...");
 
-        // cria um novo virtualMaze "cheio de paredes"
-        VirtualMaze();
+        Vector2Int start, end;
+        ChooseRandomStartEnd(out start, out end);
+        Debug.Log($"[MazeProceduralGeneratorV2] Start={start}, End={end}");
 
-        // gera o caminho principal + ramificações
-        var mainPath = GenerateMainPath(start, end, targetMainLength);
+        int targetMainLength = Mathf.Max(1, Mathf.RoundToInt(mainPathSizeInTileCount.RandomizeValue()));
+        Debug.Log($"[MazeProceduralGeneratorV2] Target main path length = {targetMainLength}");
 
-        // calcula o menor caminho REAL (depois de todas as aberturas de parede)
-        int realShortestLen = ComputeShortestPathLength(start, end);
+        List<Vector2Int> bestMainPath = null;
+        Dictionary<Vector2Int, VirtualTile2DWithWalls> bestMaze = null;
+        int bestRealLen = -1;
 
-        if (realShortestLen <= 0)
+        for (int attempt = 0; attempt < maxAttemptsToMatchRealDistance; attempt++)
         {
-            Debug.LogWarning("[MazeProceduralGeneratorV2] Start e End ficaram desconectados nessa tentativa.");
-            continue;
+            Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}/{maxAttemptsToMatchRealDistance}");
+
+            VirtualMaze();
+
+            var mainPath = GenerateMainPath(start, end, targetMainLength);
+
+            int realShortestLen = ComputeShortestPathLength(start, end);
+
+            if (realShortestLen <= 0)
+            {
+                Debug.LogWarning("[MazeProceduralGeneratorV2] Start and End ended up disconnected on this attempt.");
+                continue;
+            }
+
+            Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}: realShortestLen={realShortestLen}");
+
+            // if the true shortest path >= target, it's acceptable; we can stop
+            if (realShortestLen >= targetMainLength)
+            {
+                bestMaze = CloneMaze(virtualMaze);
+                bestMainPath = new List<Vector2Int>(mainPath);
+                bestRealLen = realShortestLen;
+                Debug.Log($"[MazeProceduralGeneratorV2] Accepted attempt {attempt + 1} (real >= target).");
+                break;
+            }
+
+            // otherwise, store the best so far
+            if (realShortestLen > bestRealLen)
+            {
+                bestRealLen = realShortestLen;
+                bestMaze = CloneMaze(virtualMaze);
+                bestMainPath = new List<Vector2Int>(mainPath);
+                Debug.Log($"[MazeProceduralGeneratorV2] New best realShortestLen={bestRealLen}");
+            }
         }
 
-        Debug.Log($"[MazeProceduralGeneratorV2] Attempt {attempt + 1}: realShortestLen={realShortestLen}");
-
-        // se o menor caminho real for >= alvo, aceitável, podemos parar
-        if (realShortestLen >= targetMainLength)
+        if (bestMaze == null || bestMainPath == null || bestMainPath.Count == 0)
         {
-            bestMaze = CloneMaze(virtualMaze);
-            bestMainPath = new List<Vector2Int>(mainPath);
-            bestRealLen = realShortestLen;
-            Debug.Log($"[MazeProceduralGeneratorV2] Accepted attempt {attempt + 1} (real >= target).");
-            break;
+            Debug.LogError("[MazeProceduralGeneratorV2] Failed to generate any valid maze.");
+            return;
         }
 
-        // caso contrário, guarda o melhor
-        if (realShortestLen > bestRealLen)
-        {
-            bestRealLen = realShortestLen;
-            bestMaze = CloneMaze(virtualMaze);
-            bestMainPath = new List<Vector2Int>(mainPath);
-            Debug.Log($"[MazeProceduralGeneratorV2] New best realShortestLen={bestRealLen}");
-        }
+        virtualMaze = bestMaze;
+
+        mazeObjects ??= new Dictionary<Vector2Int, MazeObject>();
+        PlaceMazeObjects(bestMainPath);
+        BuildMazeVisual();
+        Debug.Log($"[MazeProceduralGeneratorV2] Final real shortest path length = {bestRealLen}");
     }
-
-    if (bestMaze == null || bestMainPath == null || bestMainPath.Count == 0)
-    {
-        Debug.LogError("[MazeProceduralGeneratorV2] Failed to generate any valid maze.");
-        return;
-    }
-
-    // aplica o melhor maze encontrado
-    virtualMaze = bestMaze;
-
-    // prepara objetos e visual
-    mazeObjects ??= new Dictionary<Vector2Int, MazeObject>();
-    PlaceMazeObjects(bestMainPath);
-    BuildMazeVisual();
-    Debug.Log($"[MazeProceduralGeneratorV2] Final real shortest path length = {bestRealLen}");
-}
 
     private void VirtualMaze()
     {
@@ -141,16 +134,12 @@ public void InitializeScript()
             }
         }
 
-        // registra conexões das paredes com as quinas (topologia extra; hoje não bloqueia mais nada)
         RegisterAllCornerConnections();
     }
 
-    // =========================================================
-    // Corners / Walls (corners não influenciam mais remoção de parede)
-    // =========================================================
     private void RegisterAllCornerConnections()
     {
-        // Só UP e RIGHT pra não duplicar paredes
+        // Only the canonical two wall directions needed to touch all corners:
         Vector2Int[] canonicalDirs = { Vector2Int.up, Vector2Int.right };
 
         for (int x = 0; x < mazeWidth; x++)
@@ -163,7 +152,7 @@ public void InitializeScript()
                 {
                     Vector2Int neighbour = tilePos + dir;
 
-                    // internas + bordas, tudo conta
+                    // internal + edges; everything counts
                     if (neighbour.x >= 0 && neighbour.x < mazeWidth &&
                         neighbour.y >= 0 && neighbour.y < mazeHeight)
                     {
@@ -196,7 +185,7 @@ public void InitializeScript()
 
     private static Vector2Int[] GetCornersForWall(Vector2Int tilePos, Vector2Int dir)
     {
-        // meio da parede
+        // wall midpoint in virtual grid coordinates
         Vector2Int mid = tilePos + dir;
 
         // perpendicular (x,y) -> (-y,x)
@@ -208,7 +197,7 @@ public void InitializeScript()
         return new[] { cornerA, cornerB };
     }
 
-    // TryOpenWall SIMPLIFICADO – só mexe no virtualMaze
+    // Simplified TryOpenWall – only modifies the virtualMaze
     private bool TryOpenWall(Vector2Int tilePos, Vector2Int dir)
     {
         if (!virtualMaze[tilePos].HasWall(dir))
@@ -218,22 +207,19 @@ public void InitializeScript()
 
         if (virtualMaze.TryGetValue(neighbourPos, out var neighbourTile))
         {
-            // remove parede dos dois lados
+            // remove the wall from both sides
             virtualMaze[tilePos].RemoveWall(dir);
             neighbourTile.RemoveWall(-dir);
         }
         else
         {
-            // borda externa
+            // outer border
             virtualMaze[tilePos].RemoveWall(dir);
         }
 
         return true;
     }
 
-    // =========================================================
-    // Path generation
-    // =========================================================
     private List<Vector2Int> GetValidNeighboursForPath(
         Vector2Int current,
         HashSet<Vector2Int> visited,
@@ -245,7 +231,7 @@ public void InitializeScript()
         {
             Vector2Int n = current + dir;
 
-            // Dentro da grid
+            // inside the grid
             if (n.x < 0 || n.x >= mazeWidth || n.y < 0 || n.y >= mazeHeight)
                 continue;
 
@@ -257,12 +243,12 @@ public void InitializeScript()
 
         return result;
     }
-    
+
     private void ChooseRandomStartEnd(out Vector2Int start, out Vector2Int end)
     {
         if (mazeWidth <= 0 || mazeHeight <= 0)
         {
-            Debug.LogError("[MazeProceduralGeneratorV2] Maze size inválido para escolher start/end.");
+            Debug.LogError("[MazeProceduralGeneratorV2] Invalid maze size to choose start/end.");
             start = Vector2Int.zero;
             end   = Vector2Int.zero;
             return;
@@ -273,7 +259,7 @@ public void InitializeScript()
             Random.Range(0, mazeHeight)
         );
 
-        // garante que end seja diferente de start
+        // ensure end differs from start
         do
         {
             end = new Vector2Int(
@@ -287,7 +273,7 @@ public void InitializeScript()
     {
         if (!virtualMaze.ContainsKey(start) || !virtualMaze.ContainsKey(end))
         {
-            Debug.LogError($"[MazeProceduralGeneratorV2] Start {start} ou End {end} fora do maze.");
+            Debug.LogError($"[MazeProceduralGeneratorV2] Start {start} or End {end} are outside the maze.");
             return Array.Empty<Vector2Int>();
         }
 
@@ -306,10 +292,10 @@ public void InitializeScript()
 
         while (current != end && stepsLeft > 0 && safety-- > 0)
         {
-            // tenta vizinhos não visitados
+            // try unvisited neighbours first
             var neighbours = GetValidNeighboursForPath(current, visited, allowVisited: false);
 
-            // se não tiver, libera revisita
+            // if none, allow revisiting
             if (neighbours.Count == 0)
             {
                 neighbours = GetValidNeighboursForPath(current, visited, allowVisited: true);
@@ -317,7 +303,7 @@ public void InitializeScript()
                     break;
             }
 
-            // ordena aproximando de end
+            // sort by approaching the end
             neighbours.Sort((a, b) =>
                 DistManhattan(a, end).CompareTo(DistManhattan(b, end)));
 
@@ -346,10 +332,10 @@ public void InitializeScript()
 
         if (current != end)
         {
-            Debug.LogWarning($"[MazeProceduralGeneratorV2] Caminho principal não chegou em {end}. PathLen={mainPath.Count}");
+            Debug.LogWarning($"[MazeProceduralGeneratorV2] Main path did not reach {end}. PathLen={mainPath.Count}");
         }
 
-        // preencher o resto do labirinto com ramificações até visitar tudo
+        // fill remaining maze by carving branches until everything is visited
         FillAllMazeWithBranches(visited);
 
         return mainPath.ToArray();
@@ -358,11 +344,11 @@ public void InitializeScript()
     private void FillAllMazeWithBranches(HashSet<Vector2Int> globalVisited)
     {
         int totalCells = mazeWidth * mazeHeight;
-        int safetyGlobal = totalCells * 16; // fusível geral
+        int safetyGlobal = totalCells * 16; // global fuse
 
         while (globalVisited.Count < totalCells && safetyGlobal-- > 0)
         {
-            // escolhe um tile já visitado como ponto de partida da ramificação
+            // choose a visited cell as branch start
             Vector2Int branchStart = GetRandomVisitedCell(globalVisited);
 
             CarveBranchFrom(branchStart, globalVisited);
@@ -370,7 +356,7 @@ public void InitializeScript()
 
         if (globalVisited.Count < totalCells)
         {
-            Debug.LogWarning($"[MazeProceduralGeneratorV2] Nem todos os tiles foram visitados. Visited={globalVisited.Count}/{totalCells}");
+            Debug.LogWarning($"[MazeProceduralGeneratorV2] Not all tiles were visited. Visited={globalVisited.Count}/{totalCells}");
         }
     }
 
@@ -385,7 +371,7 @@ public void InitializeScript()
             i++;
         }
 
-        // fallback (só por segurança, praticamente nunca cai aqui)
+        // fallback (safety; should never get here)
         foreach (var v in visited)
             return v;
 
@@ -403,7 +389,7 @@ public void InitializeScript()
         {
             Vector2Int current = stack.Peek();
 
-            // coleta vizinhos ainda não visitados
+            // collect unvisited neighbours
             List<Vector2Int> unvisitedNeighbours = new List<Vector2Int>();
             foreach (var dir in CardinalDirections)
             {
@@ -418,12 +404,12 @@ public void InitializeScript()
 
             if (unvisitedNeighbours.Count == 0)
             {
-                // acabou as opções a partir daqui, volta na pilha
+                // no options from here, backtrack
                 stack.Pop();
                 continue;
             }
 
-            // escolhe um vizinho não visitado aleatório
+            // choose a random unvisited neighbour
             Vector2Int next = unvisitedNeighbours[UnityEngine.Random.Range(0, unvisitedNeighbours.Count)];
             Vector2Int dirToNext = next - current;
 
@@ -434,13 +420,13 @@ public void InitializeScript()
             }
             else
             {
-                // não conseguiu abrir, na próxima iteração recalcula vizinhos
+                // couldn't open; next iteration will recalc neighbours
             }
         }
     }
 
     // =========================================================
-    // SHORTEST PATH (BFS) NO virtualMaze
+    // SHORTEST PATH (BFS) ON virtualMaze
     // =========================================================
     private int ComputeShortestPathLength(Vector2Int start, Vector2Int end)
     {
@@ -479,7 +465,7 @@ public void InitializeScript()
             }
         }
 
-        return -1; // sem caminho
+        return -1; // no path
     }
 
     private bool HasWallBetween(Vector2Int a, Vector2Int b)
@@ -492,7 +478,7 @@ public void InitializeScript()
         if (!virtualMaze.TryGetValue(b, out var tileB))
             return true;
 
-        // se qualquer lado diz que tem parede nessa direção, bloqueia
+        // if either side says there's a wall in that direction, it's blocked
         if (tileA.HasWall(dir))
             return true;
 
@@ -520,7 +506,7 @@ public void InitializeScript()
     }
 
     // =========================================================
-    // OBJECT PLACEMENT
+    // Object placement
     // =========================================================
     private void PlaceMazeObjects(IReadOnlyList<Vector2Int> mainPath)
     {
@@ -535,7 +521,7 @@ public void InitializeScript()
             if (objDef == null || objDef.Prefab == null)
                 continue;
 
-            // probabilidade de esse TIPO de objeto aparecer
+            // probability that THIS TYPE of object appears
             if (Random.value > objDef.probability)
                 continue;
 
@@ -556,109 +542,109 @@ public void InitializeScript()
                 }
                 else
                 {
-                    // não achou lugar válido pra essa instância, segue o baile
+                    // couldn't find a valid spot for this instance; skip
                 }
             }
         }
     }
 
-private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2Int> mainPath)
-{
-    List<Vector2Int> candidates = new List<Vector2Int>();
-
-    // 1) Baseado em ObjectPlacement
-    Vector2Int? forcedPathCell = null;
-
-    switch (objDef.objectPlacement)
+    private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2Int> mainPath)
     {
-        case MazeObject.ObjectPlacement.AtStartOfMainPath:
-            if (mainPath != null && mainPath.Count > 0)
-            {
-                var c = mainPath[0];
-                candidates.Add(c);
-                forcedPathCell = c;
-            }
-            break;
+        List<Vector2Int> candidates = new List<Vector2Int>();
 
-        case MazeObject.ObjectPlacement.AtEndOfMainPath:
-            if (mainPath != null && mainPath.Count > 0)
-            {
-                var c = mainPath[mainPath.Count - 1];
-                candidates.Add(c);
-                forcedPathCell = c;
-            }
-            break;
+        // 1) Based on ObjectPlacement
+        Vector2Int? forcedPathCell = null;
 
-        case MazeObject.ObjectPlacement.AnywhereNotYetOccupied:
-            for (int x = 0; x < mazeWidth; x++)
-            {
-                for (int y = 0; y < mazeHeight; y++)
+        switch (objDef.objectPlacement)
+        {
+            case MazeObject.ObjectPlacement.AtStartOfMainPath:
+                if (mainPath != null && mainPath.Count > 0)
                 {
-                    var cell = new Vector2Int(x, y);
-                    if (!mazeObjects.ContainsKey(cell))
-                        candidates.Add(cell);
+                    var c = mainPath[0];
+                    candidates.Add(c);
+                    forcedPathCell = c;
                 }
-            }
-            break;
-    }
+                break;
 
-    if (candidates.Count == 0)
-        return null;
+            case MazeObject.ObjectPlacement.AtEndOfMainPath:
+                if (mainPath != null && mainPath.Count > 0)
+                {
+                    var c = mainPath[mainPath.Count - 1];
+                    candidates.Add(c);
+                    forcedPathCell = c;
+                }
+                break;
 
-    // 2) BorderPlacement
-    bool wantBorder;
-    switch (objDef.shouldBePlacedOnBorder)
-    {
-        case MazeObject.BorderPlacement.Should:
-            wantBorder = true;
-            candidates = FilterByBorder(candidates, wantBorder);
-            break;
+            case MazeObject.ObjectPlacement.AnywhereNotYetOccupied:
+                for (int x = 0; x < mazeWidth; x++)
+                {
+                    for (int y = 0; y < mazeHeight; y++)
+                    {
+                        var cell = new Vector2Int(x, y);
+                        if (!mazeObjects.ContainsKey(cell))
+                            candidates.Add(cell);
+                    }
+                }
+                break;
+        }
 
-        case MazeObject.BorderPlacement.ShouldNot:
-            wantBorder = false;
-            candidates = FilterByBorder(candidates, wantBorder);
-            break;
+        if (candidates.Count == 0)
+            return null;
 
-        case MazeObject.BorderPlacement.Optional:
-        default:
-            wantBorder = Random.value < objDef.probabilityIfOptional;
-            candidates = FilterByBorder(candidates, wantBorder, allowFallback: true);
-            break;
-    }
+        // 2) BorderPlacement
+        bool wantBorder;
+        switch (objDef.shouldBePlacedOnBorder)
+        {
+            case MazeObject.BorderPlacement.Should:
+                wantBorder = true;
+                candidates = FilterByBorder(candidates, wantBorder);
+                break;
 
-    // >>> TRATAMENTO ESPECIAL PARA START/END <<<
-    if (candidates.Count == 0 && forcedPathCell.HasValue)
-    {
+            case MazeObject.BorderPlacement.ShouldNot:
+                wantBorder = false;
+                candidates = FilterByBorder(candidates, wantBorder);
+                break;
+
+            case MazeObject.BorderPlacement.Optional:
+            default:
+                wantBorder = Random.value < objDef.probabilityIfOptional;
+                candidates = FilterByBorder(candidates, wantBorder, allowFallback: true);
+                break;
+        }
+
+        // >>> SPECIAL HANDLING FOR START/END <<<
+        if (candidates.Count == 0 && forcedPathCell.HasValue)
+        {
+            Debug.LogWarning(
+                $"[MazeProceduralGeneratorV2] Border rule for {objDef.objectPlacement} " +
+                $"eliminated all options. Using cell {forcedPathCell.Value} anyway.");
+            candidates.Add(forcedPathCell.Value);
+        }
+
+        if (candidates.Count == 0)
+            return null;
+
+        // 3) Shuffle candidates to randomize
+        Shuffle(candidates);
+
+        // 4) Check minimum distances
+        foreach (var cell in candidates)
+        {
+            if (mazeObjects.ContainsKey(cell))
+                continue;
+
+            if (IsTooCloseToOtherObjects(cell, objDef))
+                continue;
+
+            return cell;
+        }
+
+        // No cell satisfies distances
         Debug.LogWarning(
-            $"[MazeProceduralGeneratorV2] Border rule for {objDef.objectPlacement} " +
-            $"eliminou todas as opções. Usando mesmo assim a célula {forcedPathCell.Value}.");
-        candidates.Add(forcedPathCell.Value);
-    }
-
-    if (candidates.Count == 0)
+            $"[MazeProceduralGeneratorV2] Could not place object '{objDef.Prefab?.name}' " +
+            $"for placement {objDef.objectPlacement} while respecting distances.");
         return null;
-
-    // 3) Embaralhar candidatos para randomizar
-    Shuffle(candidates);
-
-    // 4) Checar distâncias mínimas
-    foreach (var cell in candidates)
-    {
-        if (mazeObjects.ContainsKey(cell))
-            continue;
-
-        if (IsTooCloseToOtherObjects(cell, objDef))
-            continue;
-
-        return cell;
     }
-
-    // Se chegou aqui, não achou célula que respeite distâncias
-    Debug.LogWarning(
-        $"[MazeProceduralGeneratorV2] Não foi possível posicionar objeto '{objDef.Prefab?.name}' " +
-        $"para placement {objDef.objectPlacement} respeitando distâncias mínimas.");
-    return null;
-}
 
     private List<Vector2Int> FilterByBorder(List<Vector2Int> input, bool border, bool allowFallback = false)
     {
@@ -674,7 +660,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
         }
 
         if (result.Count == 0 && allowFallback)
-            return input; // não conseguiu aplicar preferência, mantém lista original
+            return input; // couldn't apply preference, keep original list
 
         return result;
     }
@@ -738,7 +724,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
     {
         BuildParentsIfNotExist();
 
-        // 1) LIMPAR FILHOS ANTIGOS
+        // 1) CLEAR OLD CHILDREN
         if (mazeElementsGroundSubParent != null)
         {
             for (int i = mazeElementsGroundSubParent.childCount - 1; i >= 0; i--)
@@ -763,36 +749,44 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
             }
         }
 
-        // 2) PEGAR TAMANHO DOS PREFABS
+        if (mazeElementsCornersSubParent != null)
+        {
+            for (int i = mazeElementsCornersSubParent.childCount - 1; i >= 0; i--)
+            {
+                DestroyImmediate(mazeElementsCornersSubParent.GetChild(i).gameObject);
+            }
+        }
+
+        // 2) GET PREFAB SIZES
         var groundRenderer = mazeGroundPrefab.GetComponentInChildren<Renderer>();
         var wallRenderer   = mazeWallPrefab.GetComponentInChildren<Renderer>();
 
-        // materiais base
+        // base materials
         Material floorMat = groundRenderer.sharedMaterial;
         Material wallMat  = wallRenderer.sharedMaterial;
 
-        // tamanhos em mundo
+        // world sizes
         float tileSizeX = groundRenderer.bounds.size.x;
         float tileSizeZ = groundRenderer.bounds.size.z;
 
         Vector3 wallBaseSize   = wallRenderer.bounds.size;
-        float baseWallThickness = wallBaseSize.x; // eixo "fino" do prefab
-        float baseWallLength    = wallBaseSize.z; // eixo "comprido" do prefab
+        float baseWallThickness = wallBaseSize.x; // the "thin" axis of the wall prefab
+        float baseWallLength    = wallBaseSize.z; // the "long" axis of the wall prefab
         float baseWallHeight    = wallBaseSize.y;
 
-        // altura real do chão
+        // floor actual height
         float groundHeight = groundRenderer.bounds.size.y;
-        // escala Y para a parede "achatada" ter MESMA altura que o chão
+        // Y scale for flattened walls to match floor height
         float flatWallScaleY = groundHeight / baseWallHeight;
 
-        // espessura real da parede
+        // actual wall thickness
         float wallThickness = baseWallThickness * wallThicknessScale;
 
-        // quanto "anda" de um tile pro outro (tile + parede entre eles)
+        // stride from one tile center to the next (tile + the wall gap between them)
         float strideX = tileSizeX + wallThickness;
         float strideZ = tileSizeZ + wallThickness;
 
-        // centralizar labirinto no parent
+        // center the maze under the parent
         float originX = -((mazeWidth  - 1) * strideX) * 0.5f;
         float originZ = -((mazeHeight - 1) * strideZ) * 0.5f;
 
@@ -805,11 +799,11 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                 Vector2Int cellPos = new Vector2Int(x, z);
                 var tileData = virtualMaze[cellPos];
 
-                // centro do tile em mundo
+                // world center of the tile
                 float cx = originX + x * strideX;
                 float cz = originZ + z * strideZ;
 
-                // ---------- TILE (chão) ----------
+                // ---------- TILE (floor) ----------
                 newTile = Instantiate(mazeGroundPrefab, mazeElementsGroundSubParent);
                 newTile.transform.localPosition = new Vector3(
                     cx,
@@ -818,21 +812,21 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                 );
 
                 // =====================================================
-                // PAREDES ESQUERDA / DIREITA (LEFT / RIGHT)
+                // LEFT / RIGHT WALLS
                 // =====================================================
 
-                // LEFT: só desenha na borda esquerda (x == 0)
+                // LEFT: draw only on the left border (x == 0)
                 if (x == 0)
                 {
                     bool hasLeftWall = tileData.HasWall(Vector2Int.left);
                     float leftX = cx - (tileSizeX * 0.5f + wallThickness * 0.5f);
 
                     newWall = Instantiate(mazeWallPrefab, mazeElementsWallSubParent);
-                    newWall.transform.localRotation = Quaternion.identity; // longa no Z
+                    newWall.transform.localRotation = Quaternion.identity; // long axis along Z
                     newWall.transform.localScale = new Vector3(
-                        wallThicknessScale,                                   // espessura relativa
-                        hasLeftWall ? wallHeightScale : flatWallScaleY,      // alta ou achatada
-                        tileSizeZ / baseWallLength                           // comprimento cobre o tile
+                        wallThicknessScale,                                   // relative thickness
+                        hasLeftWall ? wallHeightScale : flatWallScaleY,      // tall or flattened
+                        tileSizeZ / baseWallLength                           // length covers the tile
                     );
                     newWall.transform.localPosition = new Vector3(
                         leftX,
@@ -844,7 +838,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                     wallInstRenderer.sharedMaterial = hasLeftWall ? wallMat : floorMat;
                 }
 
-                // RIGHT: sempre, essa célula é dona da parede à direita
+                // RIGHT: always; this cell owns its right wall
                 {
                     bool hasRightWall = tileData.HasWall(Vector2Int.right);
                     float rightX = cx + (tileSizeX * 0.5f + wallThickness * 0.5f);
@@ -867,17 +861,17 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                 }
 
                 // =====================================================
-                // PAREDES FRENTE / TRÁS (DOWN / UP)
+                // FRONT / BACK WALLS (DOWN / UP)
                 // =====================================================
 
-                // DOWN (frente): só na borda inferior (z == 0)
+                // DOWN (front): only on the bottom border (z == 0)
                 if (z == 0)
                 {
                     bool hasDownWall = tileData.HasWall(Vector2Int.down);
                     float frontZ = cz - (tileSizeZ * 0.5f + wallThickness * 0.5f);
 
                     newWall = Instantiate(mazeWallPrefab, mazeElementsWallSubParent);
-                    newWall.transform.localRotation = Quaternion.Euler(0f, 90f, 0f); // longa no X
+                    newWall.transform.localRotation = Quaternion.Euler(0f, 90f, 0f); // long axis along X
                     newWall.transform.localScale = new Vector3(
                         wallThicknessScale,
                         hasDownWall ? wallHeightScale : flatWallScaleY,
@@ -893,7 +887,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                     wallInstRenderer.sharedMaterial = hasDownWall ? wallMat : floorMat;
                 }
 
-                // UP (trás): sempre, essa célula é dona da parede de cima
+                // UP (back): always; this cell owns its top wall
                 {
                     bool hasUpWall = tileData.HasWall(Vector2Int.up);
                     float backZ = cz + (tileSizeZ * 0.5f + wallThickness * 0.5f);
@@ -916,18 +910,40 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
                 }
 
                 // =====================================================
-                // OBJETOS NO CENTRO DA CÉLULA
+                // OBJECTS AT THE CELL CENTER
                 // =====================================================
                 if (mazeObjects != null && mazeObjects.TryGetValue(cellPos, out MazeObject objDef))
                 {
                     GameObject obj = Instantiate(objDef.Prefab, mazeElementsObjectsSubParent);
-                    // Y simples: em cima do chão (ajusta se precisar)
+                    // Simple Y: on top of the floor (adjust if needed)
                     obj.transform.localPosition = new Vector3(
                         cx,
                         groundHeight,
                         cz
                     );
                 }
+            }
+        }
+
+        // =====================================================
+        // CORNERS (grid intersections)
+        // =====================================================
+        if (cornerPrefab != null && virtualCorners != null && virtualCorners.Count > 0)
+        {
+            // Each step in the virtual corner grid maps to 'stride'.
+            // A corner at virtual coord (i, j) sits at:
+            // origin + (i - 0.5) * stride in X, origin + (j - 0.5) * stride in Z.
+            foreach (var kvp in virtualCorners)
+            {
+                Vector2Int c = kvp.Key;
+
+                float wx = originX + (c.x - 0.5f) * strideX;
+                float wz = originZ + (c.y - 0.5f) * strideZ;
+
+                var cornerGO = Instantiate(cornerPrefab, mazeElementsCornersSubParent);
+                cornerGO.transform.localScale = new Vector3(wallThicknessScale, wallHeightScale, wallThicknessScale);
+                cornerGO.transform.localPosition = new Vector3(wx, 0f, wz); // assumes prefab pivot at base
+                // If your corner prefab should be flush with floor top, consider y = groundHeight.
             }
         }
     }
@@ -969,6 +985,18 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
         {
             mazeElementsObjectsSubParent = foundObjects;
         }
+
+        // NEW: Corners
+        Transform foundCorners = mazeElementsParent.transform.Find("CornersSubParent");
+        if (foundCorners == null)
+        {
+            mazeElementsCornersSubParent = new GameObject("CornersSubParent").transform;
+            mazeElementsCornersSubParent.SetParent(mazeElementsParent, false);
+        }
+        else
+        {
+            mazeElementsCornersSubParent = foundCorners;
+        }
     }
 
     // =========================================================
@@ -977,7 +1005,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
     private class VirtualTile2DWithWalls
     {
         /// <summary>
-        /// Lista de direções que ainda possuem parede.
+        /// Directions that still have a wall.
         /// </summary>
         public List<Vector2Int> wallDirections;
 
@@ -1005,7 +1033,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
 
     private class VirtualCorner2D
     {
-        // Quantas paredes ainda estão ligadas a essa quina
+        // How many walls are still connected to this corner
         public int connectionCount;
 
         public VirtualCorner2D()
@@ -1020,7 +1048,7 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
 
         public bool CanRemoveOneConnection()
         {
-            // se já está em 1, não pode remover mais nenhuma
+            // if it's already at 1, no more can be removed
             return connectionCount > 1;
         }
 
@@ -1122,10 +1150,10 @@ private Vector2Int? ChooseCellForObject(MazeObject objDef, IReadOnlyList<Vector2
         [Range(0.01f, 1f)] public float probability = 1f;
 
         [Min(0)] public float minimumDistanceFromSimilarity = 0f;
-        [Min(0)] public float maximumDistanceFromSimilarity = 10f; // ainda não uso o máximo, mas já fica aí
+        [Min(0)] public float maximumDistanceFromSimilarity = 10f; // max not used yet
 
         [Min(0)] public float minimumDistanceFromOtherObjects = 0f;
-        [Min(0)] public float maximumDistanceFromOtherObjects = 10f; // idem
+        [Min(0)] public float maximumDistanceFromOtherObjects = 10f; // ditto
 
         public int priorityIfThereAreDistanceConflicts = 10;
 
